@@ -1,0 +1,29 @@
+{
+  "name": "dda58/test_case",
+  "description": "Test case",
+  "minimum-stability": "stable",
+  "license": "proprietary",
+  "authors": [
+    {
+      "name": "Dmitrii Denisov",
+      "email": "dda58denisov@gmail.com",
+      "homepage": "https://github.com/DDA58"
+    }
+  ],
+  "require": {
+    "php": "^8.2",
+    "ext-pdo": "*",
+    "symfony/process": "^6.3"
+  },
+  "autoload": {
+    "psr-4": {
+      "App\\": "src/"
+    },
+    "files": [
+      "src/functions.php"
+    ]
+  },
+  "require-dev": {
+    "squizlabs/php_codesniffer": "^3.7"
+  }
+}
