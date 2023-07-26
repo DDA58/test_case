@@ -8,6 +8,7 @@
 ## Инициализация
 ```bash
 $ make init
+...Wait until database container exactly up...
 $ make database_init
 ```
 
