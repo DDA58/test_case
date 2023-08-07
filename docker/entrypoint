@@ -1,0 +1,12 @@
+#!/bin/bash
+
+set -m
+
+sleep infinity &
+
+/etc/init.d/cron start &
+php /application/src/metrics.php &
+/usr/local/bin/process-exporter --procfs=/proc --config.path=/application/docker/process-exporter/config.yml &
+#/usr/local/bin/node_exporter --path.procfs=/proc --path.sysfs=/sys &
+
+fg %1
