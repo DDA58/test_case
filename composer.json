@@ -15,7 +15,9 @@
     "ext-pdo": "*",
     "ext-sockets": "*",
     "symfony/process": "^6.3",
-    "openmetrics-php/exposition-text": "^0.3.1"
+    "openmetrics-php/exposition-text": "^0.3.1",
+    "symfony/console": "^6.3",
+    "symfony/event-dispatcher": "^6.3"
   },
   "autoload": {
     "psr-4": {

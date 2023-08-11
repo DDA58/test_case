@@ -6,23 +6,21 @@ namespace App\Command;
 
 use App\Core\Database\GetDatabaseConnection;
 use App\Enum\CommandsExecutionLogStatusEnum;
-use App\Enum\DefaultExitCodesEnum;
 use App\Iterator\GetEmailIdsWithPreExpirationSubscriptionIterator;
 use PDOException;
+use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
 
-class InitBeforeExpirationCommand implements CommandInterface
+#[AsCommand(name: 'fill_commands_queue:before_expiration')]
+class FillCommandsQueueBeforeExpirationCommand extends Command
 {
     private const EMAILS_PER_COMMAND = 10;
 
-    private const NAME = 'init:before_expiration';
-
-    public static function getName(): string
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        return self::NAME;
-    }
-
-    public function handle(array $arguments = []): int
-    {
+        $arguments = $input->getArguments();
         $connection = GetDatabaseConnection::getInstance();
         $statement = $connection->prepare(
             'INSERT INTO commands_queue(`command`, `command_pid`, `parent_command_id`, `status`) VALUES(?, ?, NULL, ?)'
@@ -34,13 +32,13 @@ class InitBeforeExpirationCommand implements CommandInterface
         ]);
         $id = (int)$connection->lastInsertId();
 
-        $oneDayBeforeExpiration = $this->addBeforeExpiration($id, 1, NotifyAboutOneDayBeforeSubscriptionExpirationCommand::getName());
-        $threeDaysBeforeExpiration = $this->addBeforeExpiration($id, 3, NotifyAboutThreeDaysBeforeSubscriptionExpirationCommand::getName());
+        $oneDayBeforeExpiration = $this->addBeforeExpiration($id, 1, NotifyAboutOneDayBeforeSubscriptionExpirationCommand::getDefaultName());
+        $threeDaysBeforeExpiration = $this->addBeforeExpiration($id, 3, NotifyAboutThreeDaysBeforeSubscriptionExpirationCommand::getDefaultName());
 
         $valuesWereAdded = $oneDayBeforeExpiration['valuesWereAdded'] || $threeDaysBeforeExpiration['valuesWereAdded'];
 
         if ($valuesWereAdded === false) {
-            return DefaultExitCodesEnum::Success->value;
+            return Command::SUCCESS;
         }
 
         $query = $oneDayBeforeExpiration['query'] . $threeDaysBeforeExpiration['query'];
@@ -51,13 +49,20 @@ class InitBeforeExpirationCommand implements CommandInterface
         try {
             $connection->query($query);
 
+            $statement = $connection->prepare(
+                'UPDATE commands_queue
+            SET `command` = CONCAT(`command`, " --command_id=", `id`)
+            WHERE parent_command_id = ?'
+            );
+            $statement->execute([$id]);
+
             $connection->commit();
 
             $status = CommandsExecutionLogStatusEnum::Success;
         } catch (PDOException $exception) {
             $connection->rollBack();
 
-            return DefaultExitCodesEnum::Fail->value;
+            return Command::FAILURE;
         } finally {
             $statement = $connection->prepare(
                 'UPDATE commands_queue SET `status` = ? WHERE id = ?'
@@ -70,7 +75,7 @@ class InitBeforeExpirationCommand implements CommandInterface
 
         $this->startWorker($id);
 
-        return DefaultExitCodesEnum::Success->value;
+        return Command::SUCCESS;
     }
 
     private function addBeforeExpiration(
@@ -80,7 +85,7 @@ class InitBeforeExpirationCommand implements CommandInterface
     ): array {
         //TODO Split into several packages with fixed amount rows
         $query = 'INSERT INTO commands_queue(`command`, `command_pid`, `parent_command_id`, `status`) VALUES';
-        $pureCommand = sprintf('%s %s/src/main.php %s --parent_command_id=%d --email_ids=', PHP_BINARY, APP_PATH, $commandName, $parentCommandId);
+        $pureCommand = sprintf('%s %s/bin/console %s --email_ids=', PHP_BINARY, APP_PATH, $commandName);
         $command = $pureCommand;
         $index = 0;
         $valuesWereAdded = false;
@@ -113,14 +118,15 @@ class InitBeforeExpirationCommand implements CommandInterface
     private function startWorker(
         int $parentCommandId
     ): void {
-        exec(
+        $w = exec(
             sprintf(
-                '%s %s/src/main.php %s --parent_command_id=%d > /dev/null 2>&1 &',
+                '%s %s/bin/console %s --parent_command_id=%d > /dev/null 2>&1 &',
                 PHP_BINARY,
                 APP_PATH,
-                SimpleByProcessesNotifyWorkerCommand::getName(), //SimpleByDatabaseNotifyWorkerCommand
+                SimpleByProcessesNotifyWorkerCommand::getDefaultName(), //SimpleByDatabaseNotifyWorkerCommand
                 $parentCommandId
             )
         );
+        var_dump($w);
     }
 }

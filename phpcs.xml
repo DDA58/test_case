@@ -3,4 +3,5 @@
     <description>The PSR12 coding standard.</description>
     <rule ref="PSR12"/>
     <file>src/</file>
+    <file>bin/</file>
 </ruleset>

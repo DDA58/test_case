@@ -18,7 +18,7 @@ run_composeri:
 	docker-compose exec app composer install
 
 run_database_init:
-	docker-compose exec app php ./src/main.php init:database
+	docker-compose exec app php ./bin/console init:database
 
 run_copy_env:
 	cp .env.example .env

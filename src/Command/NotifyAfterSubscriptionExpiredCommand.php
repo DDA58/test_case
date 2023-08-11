@@ -5,17 +5,12 @@ declare(strict_types=1);
 namespace App\Command;
 
 use App\Enum\EmailSendLogTypeEnum;
+use Symfony\Component\Console\Attribute\AsCommand;
 
-class NotifyAfterSubscriptionExpiredCommand extends AbstractNotifyBeforeSubscriptionExpirationCommand
+#[AsCommand(name: 'notify:after_subscription_expired')]
+class NotifyAfterSubscriptionExpiredCommand extends AbstractNotifyByEmailIdsCommand
 {
     private const FROM = 'NotifyAfterSubscriptionExpiredCommand@localhost.ru';
-
-    private const NAME = 'notify:after_subscription_expired';
-
-    public static function getName(): string
-    {
-        return self::NAME;
-    }
 
     protected function getEmailSendLogType(): EmailSendLogTypeEnum
     {

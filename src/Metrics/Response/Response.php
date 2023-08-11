@@ -34,6 +34,6 @@ class Response
             $result .= ucwords($name, '-') . ':' . $value . PHP_EOL;
         }
 
-        return $result. PHP_EOL . PHP_EOL . $this->content;
+        return $result . PHP_EOL . PHP_EOL . $this->content;
     }
 }

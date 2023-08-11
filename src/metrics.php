@@ -19,7 +19,7 @@ socket_getsockname($socket, $address, $port);
 
 print sprintf('Server Listening on %s:%s', $address, $port) . PHP_EOL;
 
-while($currentSocketConnection = socket_accept($socket)) {
+while ($currentSocketConnection = socket_accept($socket)) {
     $request = Request::createFromString(
         (string)socket_read($currentSocketConnection, 128)
     );
@@ -45,7 +45,7 @@ while($currentSocketConnection = socket_accept($socket)) {
 
     $message = (string)$response;
 
-    $bytes = socket_send($currentSocketConnection,  $message, strlen($message), 0);
+    $bytes = socket_send($currentSocketConnection, $message, strlen($message), 0);
 
     print $bytes === false
         ? 'Error when socket_send. Code: ' . socket_last_error($currentSocketConnection)
@@ -57,4 +57,3 @@ while($currentSocketConnection = socket_accept($socket)) {
 print 'Server stopped';
 
 socket_close($socket);
-

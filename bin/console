@@ -1,0 +1,59 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+require __DIR__.'/../vendor/autoload.php';
+
+use App\Command\FillCommandsQueueAfterExpirationCommand;
+use App\Command\FillCommandsQueueBeforeExpirationCommand;
+use App\Command\InitDatabaseCommand;
+use App\Command\NotifyAboutOneDayBeforeSubscriptionExpirationCommand;
+use App\Command\NotifyAboutThreeDaysBeforeSubscriptionExpirationCommand;
+use App\Command\NotifyAfterSubscriptionExpiredCommand;
+use App\Command\SimpleByProcessesNotifyWorkerCommand;
+use Symfony\Component\Console\Application;
+use Symfony\Component\Console\ConsoleEvents;
+use Symfony\Component\Console\Event\ConsoleCommandEvent;
+use Symfony\Component\Console\Event\ConsoleErrorEvent;
+use Symfony\Component\Console\Event\ConsoleTerminateEvent;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+
+define('APP_PATH', dirname(__DIR__));
+
+set_exception_handler('exception_log_and_notify');
+
+set_error_handler('error_log_and_notify');
+
+$start = microtime(true);
+
+$dispatcher = new EventDispatcher();
+$dispatcher->addListener(
+        ConsoleEvents::COMMAND,
+    static fn(ConsoleCommandEvent $event) => $event->getOutput()->writeln(
+        sprintf('Start command "%s". PID: %s', $event->getCommand()->getName(), getmypid())
+    )
+);
+$dispatcher->addListener(
+        ConsoleEvents::TERMINATE,
+    static fn(ConsoleTerminateEvent $event) => $event->getOutput()->writeln(
+        sprintf('End command "%s". PID: %s. Time: %f', $event->getCommand()->getName(), getmypid(), microtime(true) - $start)
+    )
+);
+$dispatcher->addListener(
+        ConsoleEvents::ERROR,
+    static fn(ConsoleErrorEvent $event) => exception_log_and_notify($event->getError())
+);
+
+$application = new Application();
+$application->setDispatcher($dispatcher);
+
+$application->add(new NotifyAboutOneDayBeforeSubscriptionExpirationCommand());
+$application->add(new NotifyAboutThreeDaysBeforeSubscriptionExpirationCommand());
+$application->add(new NotifyAfterSubscriptionExpiredCommand());
+$application->add(new FillCommandsQueueAfterExpirationCommand());
+$application->add(new FillCommandsQueueBeforeExpirationCommand());
+$application->add(new InitDatabaseCommand());
+$application->add(new SimpleByProcessesNotifyWorkerCommand());
+
+$application->run();

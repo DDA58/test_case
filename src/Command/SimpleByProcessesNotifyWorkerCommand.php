@@ -6,49 +6,47 @@ namespace App\Command;
 
 use App\Core\Database\GetDatabaseConnection;
 use App\Enum\CommandsExecutionLogStatusEnum;
-use App\Enum\DefaultExitCodesEnum;
 use PDO;
+use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Process\Process;
 
 /**
  * TODO Move to supervisor?
  */
-class SimpleByProcessesNotifyWorkerCommand implements CommandInterface
+#[AsCommand(name: 'notify_worker:by_processes')]
+class SimpleByProcessesNotifyWorkerCommand extends Command
 {
     private const MAX_THREADS = 50;
 
     private const PARENT_COMMAND_ID_OPTION = 'parent_command_id';
 
-    private const NAME = 'notify_worker:by_processes';
-
-    public static function getName(): string
+    protected function configure(): void
     {
-        return self::NAME;
+        $this
+            ->addOption(self::PARENT_COMMAND_ID_OPTION, null, InputOption::VALUE_REQUIRED);
     }
 
-    public function handle(array $arguments = []): int
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $parentCommandId = 0;
-
-        foreach ($arguments as $arg) {
-            if (str_starts_with($arg, '--' . self::PARENT_COMMAND_ID_OPTION) === true) {
-                $parentCommandId = (int)$this->extractOptionValue($arg, self::PARENT_COMMAND_ID_OPTION);
-
-                break;
-            }
-        }
+        $parentCommandId = (int)$input->getOption(self::PARENT_COMMAND_ID_OPTION);
 
         if ($parentCommandId === 0) {
-            return DefaultExitCodesEnum::Invalid->value;
+            return Command::INVALID;
         }
 
         $connection = GetDatabaseConnection::getInstance();
+        $connection->beginTransaction();
         $statement = $connection->prepare(sprintf(
             'SELECT id, `command`
             FROM commands_queue
             WHERE parent_command_id = ?
                 AND `status` = ?
-            LIMIT %d',
+            LIMIT %d
+            FOR UPDATE',
             self::MAX_THREADS
         ));
         $statement->execute([
@@ -65,11 +63,24 @@ class SimpleByProcessesNotifyWorkerCommand implements CommandInterface
             $process->setTimeout(0);
             $process->disableOutput();
             $process->start();
-            $processes[] = $process;
+            $processes[$command['id']] = $process;
+            $statement = $connection->prepare(
+                'UPDATE commands_queue
+            SET `status` = ?
+            , command_pid = ?
+            WHERE id = ?'
+            );
+            $statement->execute([
+                CommandsExecutionLogStatusEnum::Started->value,
+                $process->getPid(),
+                $command['id']
+            ]);
         }
 
+        $connection->commit();
+
         while (count($processes)) {
-            foreach ($processes as $i => $runningProcess) {
+            foreach ($processes as $commandId => $runningProcess) {
                 if (count($processes) > self::MAX_THREADS || $runningProcess->isRunning() === true) {
                     usleep(10000);
 
@@ -77,15 +88,26 @@ class SimpleByProcessesNotifyWorkerCommand implements CommandInterface
                 }
 
                 if ($runningProcess->isRunning() === false) {
-                    unset($processes[$i]);
+                    unset($processes[$commandId]);
+
+                    $statement = $connection->prepare(
+                        'UPDATE commands_queue SET `status` = ? WHERE id = ?'
+                    );
+                    $statement->execute([
+                        $runningProcess->getExitCode() ? CommandsExecutionLogStatusEnum::Failed->value : CommandsExecutionLogStatusEnum::Success->value,
+                        $commandId
+                    ]);
                 }
+
+                $connection->beginTransaction();
 
                 $statement = $connection->prepare(
                     'SELECT id, `command`
         FROM commands_queue
         WHERE parent_command_id = ?
             AND `status` = ?
-        LIMIT 1'
+        LIMIT 1
+        FOR UPDATE'
                 );
                 $statement->execute([
                     $parentCommandId,
@@ -95,22 +117,32 @@ class SimpleByProcessesNotifyWorkerCommand implements CommandInterface
                 $newCommand = $statement->fetch(PDO::FETCH_OBJ);
 
                 if (!$newCommand) {
-                    break 2;
+                    $connection->commit();
+
+                    break;
                 }
 
                 $process = Process::fromShellCommandline($newCommand->command, APP_PATH);
                 $process->setTimeout(0);
                 $process->disableOutput();
                 $process->start();
-                $processes[] = $process;
+                $processes[$newCommand->id] = $process;
+                $statement = $connection->prepare(
+                    'UPDATE commands_queue
+            SET `status` = ?
+            , command_pid = ?
+            WHERE id = ?'
+                );
+                $statement->execute([
+                    CommandsExecutionLogStatusEnum::Started->value,
+                    $process->getPid(),
+                    $newCommand->id
+                ]);
+
+                $connection->commit();
             }
         }
 
-        return DefaultExitCodesEnum::Success->value;
-    }
-
-    private function extractOptionValue(string $value, string $optionName): string
-    {
-        return str_replace('--' . $optionName . '=', '', $value);
+        return Command::SUCCESS;
     }
 }

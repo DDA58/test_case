@@ -5,37 +5,34 @@ declare(strict_types=1);
 namespace App\Command;
 
 use App\Core\Database\GetDatabaseConnection;
-use App\Enum\DefaultExitCodesEnum;
+use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
 
-class InitDatabaseCommand implements CommandInterface
+#[AsCommand(name: 'init:database')]
+class InitDatabaseCommand extends Command
 {
-    private const NAME = 'init:database';
-
-    public static function getName(): string
-    {
-        return self::NAME;
-    }
-
-    public function handle(array $arguments = []): int
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $connection = GetDatabaseConnection::getInstance();
 
-        echo '[InitDatabaseCommand] Start making skeleton' . PHP_EOL;
+        $output->writeln('[InitDatabaseCommand] Start making skeleton');
 
         $connection->query(
             file_get_contents(sprintf('%s/database/skeleton.sql', APP_PATH))
         );
 
-        echo '[InitDatabaseCommand] Finish making skeleton' . PHP_EOL;
+        $output->writeln('[InitDatabaseCommand] Finish making skeleton');
 
-        echo '[InitDatabaseCommand] Start seeding' . PHP_EOL;
+        $output->writeln('[InitDatabaseCommand] Start seeding');
 
         $connection->query(
             file_get_contents(sprintf('%s/database/seeds.sql', APP_PATH))
         );
 
-        echo '[InitDatabaseCommand] End seeding' . PHP_EOL;
+        $output->writeln('[InitDatabaseCommand] End seeding');
 
-        return DefaultExitCodesEnum::Success->value;
+        return Command::SUCCESS;
     }
 }

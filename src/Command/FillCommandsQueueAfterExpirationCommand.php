@@ -6,23 +6,22 @@ namespace App\Command;
 
 use App\Core\Database\GetDatabaseConnection;
 use App\Enum\CommandsExecutionLogStatusEnum;
-use App\Enum\DefaultExitCodesEnum;
 use App\Iterator\GetEmailIdsWithExpiredSubscriptionIterator;
 use PDOException;
+use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
 
-class InitAfterExpirationCommand implements CommandInterface
+#[AsCommand(name: 'fill_commands_queue:after_expiration')]
+class FillCommandsQueueAfterExpirationCommand extends Command
 {
     private const EMAILS_PER_COMMAND = 10;
 
-    private const NAME = 'init:after_expiration';
-
-    public static function getName(): string
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        return self::NAME;
-    }
+        $arguments = $input->getArguments();
 
-    public function handle(array $arguments = []): int
-    {
         $connection = GetDatabaseConnection::getInstance();
         $statement = $connection->prepare(
             'INSERT INTO commands_queue(`command`, `command_pid`, `parent_command_id`, `status`) VALUES(?, ?, NULL, ?)'
@@ -36,7 +35,7 @@ class InitAfterExpirationCommand implements CommandInterface
 
         //TODO Split into several packages with fixed amount rows
         $query = 'INSERT INTO commands_queue(`command`, `command_pid`, `parent_command_id`, `status`) VALUES';
-        $pureCommand = sprintf('%s %s/src/main.php %s --parent_command_id=%d --email_ids=', PHP_BINARY, APP_PATH, NotifyAfterSubscriptionExpiredCommand::getName(), $id);
+        $pureCommand = sprintf('%s %s/bin/console %s --email_ids=', PHP_BINARY, APP_PATH, NotifyAfterSubscriptionExpiredCommand::getDefaultName());
         $command = $pureCommand;
         $index = 0;
         $valuesWereAdded = false;
@@ -61,7 +60,7 @@ class InitAfterExpirationCommand implements CommandInterface
         }
 
         if ($valuesWereAdded === false) {
-            return DefaultExitCodesEnum::Success->value;
+            return Command::SUCCESS;
         }
 
         $status = CommandsExecutionLogStatusEnum::Failed;
@@ -70,13 +69,20 @@ class InitAfterExpirationCommand implements CommandInterface
         try {
             $connection->query($query);
 
+            $statement = $connection->prepare(
+                'UPDATE commands_queue
+            SET `command` = CONCAT(`command`, " --command_id=", `id`)
+            WHERE parent_command_id = ?'
+            );
+            $statement->execute([$id]);
+
             $connection->commit();
 
             $status = CommandsExecutionLogStatusEnum::Success;
         } catch (PDOException $exception) {
             $connection->rollBack();
 
-            return DefaultExitCodesEnum::Fail->value;
+            return Command::FAILURE;
         } finally {
             $statement = $connection->prepare(
                 'UPDATE commands_queue SET `status` = ? WHERE id = ?'
@@ -89,7 +95,7 @@ class InitAfterExpirationCommand implements CommandInterface
 
         $this->startWorker($id);
 
-        return DefaultExitCodesEnum::Success->value;
+        return Command::SUCCESS;
     }
 
     private function startWorker(
@@ -97,10 +103,10 @@ class InitAfterExpirationCommand implements CommandInterface
     ): void {
         exec(
             sprintf(
-                '%s %s/src/main.php %s --parent_command_id=%d > /dev/null 2>&1 &',
+                '%s %s/bin/console %s --parent_command_id=%d > /dev/null 2>&1 &',
                 PHP_BINARY,
                 APP_PATH,
-                SimpleByProcessesNotifyWorkerCommand::getName(), //SimpleByDatabaseNotifyWorkerCommand
+                SimpleByProcessesNotifyWorkerCommand::getDefaultName(), //SimpleByDatabaseNotifyWorkerCommand
                 $parentCommandId
             )
         );

@@ -23,7 +23,7 @@ class Request
 
         return new self(
             $matches['METHOD'] ?? null,
-                $matches['PATH'] ?? null
+            $matches['PATH'] ?? null
         );
     }
 
