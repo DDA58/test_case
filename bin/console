@@ -8,6 +8,7 @@ use Symfony\Component;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
+use Symfony\Component\EventDispatcher\DependencyInjection\RegisterListenersPass;
 
 date_default_timezone_set('Europe/Moscow');
 
@@ -21,13 +22,14 @@ set_exception_handler('exception_log_and_notify');
 set_error_handler('error_log_and_notify');
 
 $container = new ContainerBuilder();
+$container->addCompilerPass(new RegisterListenersPass());
 
 (new YamlFileLoader(
     $container,
     new FileLocator(dirname(__DIR__) . '/config')
 ))->load('services.yaml');
 
-$container->compile();
+$container->compile(true);
 
 /** @var App $app */
 $app = $container->get(App::class);

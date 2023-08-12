@@ -60,7 +60,7 @@ FOR UPDATE'
             $email = $statement->fetch(PDO::FETCH_OBJ);
 
             if ($email === false) {
-                $connection->commit();
+                $connection->rollBack();
 
                 continue;
             }

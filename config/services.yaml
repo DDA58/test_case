@@ -3,6 +3,12 @@ parameters:
   app.version: 0.0.1
   app.start_execution_time: !php/const START_EXECUTION_TIME
   app.path: !php/const APP_PATH
+  app.database.host: '%env(MYSQL_HOST)%'
+  app.database.name: '%env(MYSQL_DATABASE)%'
+  app.database.port: '%env(MYSQL_PORT)%'
+  app.database.charset: '%env(MYSQL_CHARSET)%'
+  app.database.user: 'root'
+  app.database.password: '%env(MYSQL_ROOT_PASSWORD)%'
 
 services:
   _defaults:
@@ -20,24 +26,34 @@ services:
 
   _instanceof:
     Symfony\Component\Console\Command\Command:
-      tags: [ 'app.command' ]
+      tags: [ 'console.command' ]
+    Symfony\Component\EventDispatcher\EventSubscriberInterface:
+      tags: [ 'kernel.event_subscriber' ]
 
-  app.event_dispatcher: '@Symfony\Component\EventDispatcher\EventDispatcherInterface'
+  event_dispatcher: '@Symfony\Component\EventDispatcher\EventDispatcherInterface'
 
-  App\Core\EventDispatcher\Configurator\EventDispatcherConfigurator:
+  App\Core\EventDispatcher\Subscriber\EndCommandLogSubscriber:
     arguments:
       $startExecutionTime: '%app.start_execution_time%'
 
   Symfony\Component\EventDispatcher\EventDispatcherInterface:
     class: Symfony\Component\EventDispatcher\EventDispatcher
-    configurator: '@App\Core\EventDispatcher\Configurator\EventDispatcherConfigurator'
+
+  App\Core\Database\Connection\GetDatabaseConnection:
+    arguments:
+      $host: '%app.database.host%'
+      $database: '%app.database.name%'
+      $port: '%app.database.port%'
+      $charset: '%app.database.charset%'
+      $user: '%app.database.user%'
+      $password: '%app.database.password%'
 
   App\Core\App:
     class: App\Core\App
     public: true
     arguments:
-      $commands: !tagged_iterator app.command
+      $commands: !tagged_iterator console.command
       $name: '%app.name%'
       $version: '%app.version%'
     calls:
-      - setDispatcher: [ '@app.event_dispatcher' ]
+      - setDispatcher: [ '@event_dispatcher' ]
