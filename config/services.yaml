@@ -2,10 +2,13 @@ parameters:
   app.name: TestCaseConsoleApp
   app.version: 0.0.1
   app.start_execution_time: !php/const START_EXECUTION_TIME
+  app.path: !php/const APP_PATH
 
 services:
   _defaults:
     autowire: true
+    bind:
+      '$appPath': '%app.path%'
 
   App\:
     resource: '../src/*'

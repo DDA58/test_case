@@ -1,3 +1,3 @@
 #!/bin/bash
 
-export $(xargs < /application/.env) && /usr/local/bin/php /application/bin/console fill_commands_queue:before_expiration >> /application/cron.log 2>&1
+/usr/local/bin/php /application/bin/console fill_commands_queue:before_expiration >> /application/cron.log 2>&1
