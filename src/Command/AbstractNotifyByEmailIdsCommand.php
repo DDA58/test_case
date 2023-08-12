@@ -25,9 +25,7 @@ abstract class AbstractNotifyByEmailIdsCommand extends Command
     {
         $this
             ->addOption(self::COMMAND_ID_OPTION, null, InputOption::VALUE_REQUIRED)
-            ->addOption(self::EMAIL_IDS_OPTION, null, InputOption::VALUE_REQUIRED)
-            ->addOption('command_id', null, InputOption::VALUE_REQUIRED)
-        ;
+            ->addOption(self::EMAIL_IDS_OPTION, null, InputOption::VALUE_REQUIRED);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Command;
 
 use App\Core\Database\GetDatabaseConnection;
+use FilesystemIterator;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -19,9 +20,17 @@ class InitDatabaseCommand extends Command
 
         $output->writeln('[InitDatabaseCommand] Start making skeleton');
 
-        $connection->query(
-            file_get_contents(sprintf('%s/database/skeleton.sql', APP_PATH))
-        );
+        $filesPaths = [];
+
+        foreach (new FilesystemIterator(sprintf('%s/database/skeleton', APP_PATH), FilesystemIterator::CURRENT_AS_SELF | FilesystemIterator::SKIP_DOTS) as $fileInfo) {
+            $filesPaths[] = $fileInfo->getRealPath();
+        }
+
+        sort($filesPaths);
+
+        foreach ($filesPaths as $filePath) {
+            $connection->query(file_get_contents($filePath));
+        }
 
         $output->writeln('[InitDatabaseCommand] Finish making skeleton');
 
