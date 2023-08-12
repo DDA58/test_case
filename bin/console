@@ -3,57 +3,33 @@
 
 declare(strict_types=1);
 
-require __DIR__.'/../vendor/autoload.php';
+use App\Core\App;
+use Symfony\Component;
+use Symfony\Component\Config\FileLocator;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 
-use App\Command\FillCommandsQueueAfterExpirationCommand;
-use App\Command\FillCommandsQueueBeforeExpirationCommand;
-use App\Command\InitDatabaseCommand;
-use App\Command\NotifyAboutOneDayBeforeSubscriptionExpirationCommand;
-use App\Command\NotifyAboutThreeDaysBeforeSubscriptionExpirationCommand;
-use App\Command\NotifyAfterSubscriptionExpiredCommand;
-use App\Command\SimpleByProcessesNotifyWorkerCommand;
-use Symfony\Component\Console\Application;
-use Symfony\Component\Console\ConsoleEvents;
-use Symfony\Component\Console\Event\ConsoleCommandEvent;
-use Symfony\Component\Console\Event\ConsoleErrorEvent;
-use Symfony\Component\Console\Event\ConsoleTerminateEvent;
-use Symfony\Component\EventDispatcher\EventDispatcher;
+date_default_timezone_set('Europe/Moscow');
 
 define('APP_PATH', dirname(__DIR__));
+define('START_EXECUTION_TIME', microtime(true));
+
+require APP_PATH . '/vendor/autoload.php';
 
 set_exception_handler('exception_log_and_notify');
 
 set_error_handler('error_log_and_notify');
 
-$start = microtime(true);
+$container = new ContainerBuilder();
 
-$dispatcher = new EventDispatcher();
-$dispatcher->addListener(
-        ConsoleEvents::COMMAND,
-    static fn(ConsoleCommandEvent $event) => $event->getOutput()->writeln(
-        sprintf('Start command "%s". PID: %s', $event->getCommand()->getName(), getmypid())
-    )
-);
-$dispatcher->addListener(
-        ConsoleEvents::TERMINATE,
-    static fn(ConsoleTerminateEvent $event) => $event->getOutput()->writeln(
-        sprintf('End command "%s". PID: %s. Time: %f', $event->getCommand()->getName(), getmypid(), microtime(true) - $start)
-    )
-);
-$dispatcher->addListener(
-        ConsoleEvents::ERROR,
-    static fn(ConsoleErrorEvent $event) => exception_log_and_notify($event->getError())
-);
+(new YamlFileLoader(
+    $container,
+    new FileLocator(dirname(__DIR__) . '/config')
+))->load('services.yaml');
 
-$application = new Application();
-$application->setDispatcher($dispatcher);
+$container->compile();
 
-$application->add(new NotifyAboutOneDayBeforeSubscriptionExpirationCommand());
-$application->add(new NotifyAboutThreeDaysBeforeSubscriptionExpirationCommand());
-$application->add(new NotifyAfterSubscriptionExpiredCommand());
-$application->add(new FillCommandsQueueAfterExpirationCommand());
-$application->add(new FillCommandsQueueBeforeExpirationCommand());
-$application->add(new InitDatabaseCommand());
-$application->add(new SimpleByProcessesNotifyWorkerCommand());
+/** @var App $app */
+$app = $container->get(App::class);
 
-$application->run();
+$app->run();
