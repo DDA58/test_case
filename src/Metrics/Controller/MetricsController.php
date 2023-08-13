@@ -12,7 +12,7 @@ use OpenMetricsPhp\Exposition\Text\HttpResponse;
 use OpenMetricsPhp\Exposition\Text\Metrics\Gauge;
 use OpenMetricsPhp\Exposition\Text\Types\MetricName;
 
-class MetricsController implements ControllerInterface
+readonly class MetricsController implements ControllerInterface
 {
     public function __invoke(Request $request): Response
     {

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Metrics\Response;
 
-class Response
+readonly class Response
 {
     public const HTTP_OK = 200;
     public const HTTP_NOT_FOUND = 404;
@@ -20,9 +20,9 @@ class Response
      * @param array<string, string> $headers
      */
     public function __construct(
-        private readonly string $content = '',
-        private readonly int $status = 200,
-        private readonly array $headers = []
+        private string $content = '',
+        private int $status = 200,
+        private array $headers = []
     ) {
     }
 

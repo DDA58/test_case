@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Metrics\Service\IsCronRunning;
 
-class IsCronRunningService
+readonly class IsCronRunningService
 {
     public function __invoke(): bool
     {

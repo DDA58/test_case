@@ -8,7 +8,7 @@ use Symfony\Component\Console\ConsoleEvents;
 use Symfony\Component\Console\Event\ConsoleErrorEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
-class ErrorCommandLogSubscriber implements EventSubscriberInterface
+readonly class ErrorCommandLogSubscriber implements EventSubscriberInterface
 {
     public function handle(ConsoleErrorEvent $event): void
     {

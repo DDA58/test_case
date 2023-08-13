@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Command;
 
 use App\Core\Database\GetDatabaseConnection;
+use App\Email\Service\GetEmailsWithExpiredSubscription\GetEmailsWithExpiredSubscriptionServiceInterface;
 use App\Enum\CommandsExecutionLogStatusEnum;
-use App\Iterator\GetEmailIdsWithExpiredSubscriptionIterator;
 use PDOException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -18,9 +18,16 @@ class FillCommandsQueueAfterExpirationCommand extends Command
 {
     private const EMAILS_PER_COMMAND = 10;
 
+    public function __construct(
+        private readonly GetEmailsWithExpiredSubscriptionServiceInterface $getEmailsWithExpiredSubscriptionService,
+        string $name = null
+    ) {
+        parent::__construct($name);
+    }
+
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $arguments = $input->getArguments();
+        $arguments = $_SERVER['argv'];;
 
         $connection = GetDatabaseConnection::getInstance();
         $statement = $connection->prepare(
@@ -40,7 +47,8 @@ class FillCommandsQueueAfterExpirationCommand extends Command
         $index = 0;
         $valuesWereAdded = false;
 
-        foreach (new GetEmailIdsWithExpiredSubscriptionIterator() as $i => $row) {
+        //TODO Add before_created status
+        foreach ($this->getEmailsWithExpiredSubscriptionService->handle() as $i => $row) {
             if ($index === self::EMAILS_PER_COMMAND) {
                 $query .= sprintf(($i === self::EMAILS_PER_COMMAND ? '' : ',') . '("%s", NULL, %d, "%s")', $command, $id, CommandsExecutionLogStatusEnum::Created->value);
 
@@ -49,7 +57,7 @@ class FillCommandsQueueAfterExpirationCommand extends Command
                 $valuesWereAdded = true;
             }
 
-            $command .= ($index === 0 ? '' : ',') . $row->email_id;
+            $command .= ($index === 0 ? '' : ',') . $row->getEmailId();
             $index++;
         }
 
@@ -59,16 +67,19 @@ class FillCommandsQueueAfterExpirationCommand extends Command
             $valuesWereAdded = true;
         }
 
-        if ($valuesWereAdded === false) {
-            return Command::SUCCESS;
-        }
-
-        $status = CommandsExecutionLogStatusEnum::Failed;
-        $connection->beginTransaction();
-
         try {
+            $status = CommandsExecutionLogStatusEnum::Success;
+
+            if ($valuesWereAdded === false) {
+                return Command::SUCCESS;
+            }
+
+            $status = CommandsExecutionLogStatusEnum::Failed;
+            $connection->beginTransaction();
+
             $connection->query($query);
 
+            //TODO also update status from before_created to created
             $statement = $connection->prepare(
                 'UPDATE commands_queue
             SET `command` = CONCAT(`command`, " --command_id=", `id`)

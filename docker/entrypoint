@@ -1,12 +1,30 @@
 #!/bin/bash
 
+#allow fg and bg commands
 set -m
 
+#main process
 sleep infinity &
 
+#fill crontab
+crontab -r
+#At 1:00 pm
+crontab -l | { cat; echo "0 1 * * * /usr/local/bin/php /application/bin/console fill_commands_queue:before_expiration --days_before_expiration=1 --emails_per_command=10 >> /application/cron.log 2>&1"; } | crontab -
+#At 2:00 pm
+crontab -l | { cat; echo "0 2 * * * /usr/local/bin/php /application/bin/console fill_commands_queue:before_expiration --days_before_expiration=3 --emails_per_command=10 >> /application/cron.log 2>&1"; } | crontab -
+#At 01:00 pm on day-of-month 5
+crontab -l | { cat; echo "0 1 5 * * /usr/local/bin/php /application/bin/console fill_commands_queue:after_expiration >> /application/cron.log 2>&1"; } | crontab -
+#At 01:00 pm on day-of-month 20
+crontab -l | { cat; echo "0 1 20 * * /usr/local/bin/php /application/bin/console fill_commands_queue:after_expiration >> /application/cron.log 2>&1"; } | crontab -
+#fill crontab
+
+#start cron
 /etc/init.d/cron start &
+#start metrics and healthcheck server
 php /application/src/metrics.php &
+#start prometheus exporter
 /usr/local/bin/process-exporter --procfs=/proc --config.path=/application/docker/process-exporter/config.yml &
 #/usr/local/bin/node_exporter --path.procfs=/proc --path.sysfs=/sys &
 
+#move main process to foreground
 fg %1

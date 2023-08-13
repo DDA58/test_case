@@ -8,7 +8,7 @@ use Symfony\Component\Console\ConsoleEvents;
 use Symfony\Component\Console\Event\ConsoleCommandEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
-class StartCommandLogSubscriber implements EventSubscriberInterface
+readonly class StartCommandLogSubscriber implements EventSubscriberInterface
 {
     public function handle(ConsoleCommandEvent $event): void
     {

@@ -8,10 +8,10 @@ use Symfony\Component\Console\ConsoleEvents;
 use Symfony\Component\Console\Event\ConsoleTerminateEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
-class EndCommandLogSubscriber implements EventSubscriberInterface
+readonly class EndCommandLogSubscriber implements EventSubscriberInterface
 {
     public function __construct(
-        private readonly float $startExecutionTime
+        private float $startExecutionTime
     ) {
     }
 

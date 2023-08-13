@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Metrics\Request;
 
-class Request
+readonly class Request
 {
     public function __construct(
-        private readonly ?string $method = null,
-        private readonly ?string $path = null
+        private ?string $method = null,
+        private ?string $path = null
     ) {
     }
 

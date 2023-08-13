@@ -8,7 +8,7 @@ use App\Metrics\Request\Request;
 use App\Metrics\Response\Response;
 use App\Metrics\Service\IsCronRunning\IsCronRunningService;
 
-class HealthCheckController implements ControllerInterface
+readonly class HealthCheckController implements ControllerInterface
 {
     public function __invoke(Request $request): Response
     {

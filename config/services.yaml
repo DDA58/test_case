@@ -23,6 +23,12 @@ services:
       - '../src/metrics.php'
       - '../src/Enum'
       - '../src/Metrics'
+      - '../src/Email'
+
+  App\Email\:
+    resource: '../src/Email/src/*'
+    exclude:
+      - '../src/Email/src/Dto'
 
   _instanceof:
     Symfony\Component\Console\Command\Command:

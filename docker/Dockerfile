@@ -16,10 +16,3 @@ RUN apt-get -y update \
 #    && pecl install xdebug \
 
 WORKDIR application
-
-#At 1:00 pm
-RUN crontab -l | { cat; echo "0 1 * * * bash /application/docker/cron_init_before_expiration"; } | crontab -
-#At 01:00 pm on day-of-month 5
-RUN crontab -l | { cat; echo "0 1 5 * * bash /application/docker/cron_init_after_expired"; } | crontab -
-#At 01:00 pm on day-of-month 20
-RUN crontab -l | { cat; echo "0 1 20 * * bash /application/docker/cron_init_after_expired"; } | crontab -
