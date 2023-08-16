@@ -1,0 +1,12 @@
+services:
+  _defaults:
+    autowire: true
+    bind:
+      '$appPath': '%app.path%'
+
+  App\Modules\Shared\:
+    resource: '../src/*'
+    exclude:
+      - '../src/Enum'
+      - '../src/ValueObject'
+      - '../src/Exception'

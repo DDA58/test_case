@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS `commands_queue` (
   `command` varchar(511) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `command_pid` bigint DEFAULT NULL,
   `parent_command_id` bigint DEFAULT NULL,
-  `status` enum('created','started','success','failed') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `status` enum('creating','created','started','success','failed') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `command_pid` (`command_pid`),

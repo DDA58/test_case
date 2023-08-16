@@ -1,0 +1,25 @@
+parameters:
+  app.commands_queue.bulk_save.amount_rows_in_package: 1000
+  app.commands_queue.notify_worker.default_max_threads: 50
+
+services:
+  _defaults:
+    autowire: true
+    bind:
+      '$amountRowsInPackage': '%app.commands_queue.bulk_save.amount_rows_in_package%'
+      '$appPath': '%app.path%'
+      '$phpBinaryPath': '%app.php_binary_path%'
+
+  App\Modules\CommandsQueue\:
+    resource: '../src/*'
+    exclude:
+      - '../src/Dto'
+      - '../src/Entity'
+
+  App\Modules\CommandsQueue\Command\SimpleByProcessesNotifyWorkerCommand:
+    arguments:
+      $defaultMaxThreads: '%app.commands_queue.notify_worker.default_max_threads%'
+
+  _instanceof:
+    Symfony\Component\Console\Command\Command:
+      tags: [ 'console.command' ]

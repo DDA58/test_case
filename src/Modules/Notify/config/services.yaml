@@ -1,0 +1,18 @@
+services:
+  _defaults:
+    autowire: true
+    bind:
+      '$emailSenderFrom': 'testCaseApp@localhost.ru'
+
+  App\Modules\Notify\:
+    resource: '../src/*'
+    exclude:
+      - '../src/Dto'
+      - '../src/Enum'
+      - '../src/Event'
+
+  _instanceof:
+    Symfony\Component\EventDispatcher\EventSubscriberInterface:
+      tags: [ 'kernel.event_subscriber' ]
+    Symfony\Component\Console\Command\Command:
+      tags: [ 'console.command' ]

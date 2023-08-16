@@ -1,0 +1,45 @@
+parameters:
+  app.database.host: '%env(MYSQL_HOST)%'
+  app.database.name: '%env(MYSQL_DATABASE)%'
+  app.database.port: '%env(MYSQL_PORT)%'
+  app.database.charset: '%env(MYSQL_CHARSET)%'
+  app.database.user: 'root'
+  app.database.password: '%env(MYSQL_ROOT_PASSWORD)%'
+
+services:
+  _defaults:
+    autowire: true
+    bind:
+      '$appPath': '%app.path%'
+
+  App\Core\:
+    resource: '../src/*'
+
+  _instanceof:
+    Symfony\Component\EventDispatcher\EventSubscriberInterface:
+      tags: [ 'kernel.event_subscriber' ]
+    Symfony\Component\Console\Command\Command:
+      tags: [ 'console.command' ]
+
+  App\Core\EventDispatcher\Subscriber\EndCommandLogSubscriber:
+    arguments:
+      $startExecutionTime: '%app.start_execution_time%'
+
+  App\Core\Database\Connection\GetDatabaseConnection:
+    arguments:
+      $host: '%app.database.host%'
+      $database: '%app.database.name%'
+      $port: '%app.database.port%'
+      $charset: '%app.database.charset%'
+      $user: '%app.database.user%'
+      $password: '%app.database.password%'
+
+  App\Core\App:
+    class: App\Core\App
+    public: true
+    arguments:
+      $commands: !tagged_iterator console.command
+      $name: '%app.name%'
+      $version: '%app.version%'
+    calls:
+      - setDispatcher: [ '@event_dispatcher' ]

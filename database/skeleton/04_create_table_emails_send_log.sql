@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS `emails_send_log` (
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `type` enum('before_3_days','before_1_day','after_expire_subscription') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `type` enum('before_subscription_expiration','before_3_days','before_1_day','after_expire_subscription') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `command_id` bigint NOT NULL,
   `email_id` bigint NOT NULL,
   `confirmed` smallint unsigned NOT NULL,

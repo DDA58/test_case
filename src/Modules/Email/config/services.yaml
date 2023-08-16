@@ -1,0 +1,12 @@
+services:
+  _defaults:
+    autowire: true
+
+  App\Modules\Email\:
+    resource: '../src/*'
+    exclude:
+      - '../src/Dto'
+
+  _instanceof:
+    Symfony\Component\EventDispatcher\EventSubscriberInterface:
+      tags: [ 'kernel.event_subscriber' ]

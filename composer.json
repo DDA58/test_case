@@ -24,11 +24,16 @@
   },
   "autoload": {
     "psr-4": {
-      "App\\Email\\": "src/Email/src/",
+      "App\\Modules\\Email\\": "src/Modules/Email/src/",
+      "App\\Modules\\Metrics\\": "src/Modules/Metrics/src/",
+      "App\\Modules\\CommandsQueue\\": "src/Modules/CommandsQueue/src/",
+      "App\\Modules\\Notify\\": "src/Modules/Notify/src/",
+      "App\\Modules\\Shared\\": "src/Modules/Shared/src/",
+      "App\\Core\\": "src/Core/src/",
       "App\\": "src/"
     },
     "files": [
-      "src/functions.php"
+      "src/Modules/Notify/bootstrap/functions.php"
     ]
   },
   "require-dev": {
