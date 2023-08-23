@@ -37,6 +37,7 @@ class GetDatabaseConnection implements GetDatabaseConnectionInterface
         $options = [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+//            PDO::ATTR_AUTOCOMMIT => 0,
         ];
 
         $pdo = new PDO($dsn, $this->user, $this->password, $options);

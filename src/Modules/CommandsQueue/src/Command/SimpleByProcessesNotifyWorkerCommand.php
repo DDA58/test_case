@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace App\Modules\CommandsQueue\Command;
 
 use App\Core\Database\Transaction\TransactionInterface;
+use App\Modules\CommandsQueue\Service\FindByParentCommandIdAndStatus\Exception\FindByParentCommandIdAndStatusServiceException;
 use App\Modules\CommandsQueue\Service\FindByParentCommandIdAndStatus\FindByParentCommandIdAndStatusServiceInterface;
+use App\Modules\CommandsQueue\Service\GetByParentCommandIdAndStatus\Exception\GetByParentCommandIdAndStatusServiceException;
 use App\Modules\CommandsQueue\Service\GetByParentCommandIdAndStatus\GetByParentCommandIdAndStatusServiceInterface;
+use App\Modules\CommandsQueue\Service\UpdateStatusAndCommandPidByCommandId\Exception\UpdateStatusAndCommandPidByCommandIdServiceException;
 use App\Modules\CommandsQueue\Service\UpdateStatusAndCommandPidByCommandId\UpdateStatusAndCommandPidByCommandIdServiceInterface;
+use App\Modules\CommandsQueue\Service\UpdateStatusByCommandId\Exception\UpdateStatusByCommandIdServiceException;
 use App\Modules\CommandsQueue\Service\UpdateStatusByCommandId\UpdateStatusByCommandIdServiceInterface;
 use App\Modules\Shared\Enum\CommandsExecutionLogStatusEnum;
 use App\Modules\Shared\Helper\ProcessCreator\ProcessCreatorHelperInterface;
@@ -62,14 +66,20 @@ class SimpleByProcessesNotifyWorkerCommand extends Command
             return Command::INVALID;
         }
 
-        $this->transaction->begin();
+        try {
+            $this->transaction->begin();
 
-        $commands = $this->getByParentCommandIdAndStatusService->handle(
-            $parentCommandId,
-            CommandsExecutionLogStatusEnum::Created,
-            $maxThreads,
-            true
-        );
+            $commands = $this->getByParentCommandIdAndStatusService->handle(
+                $parentCommandId,
+                CommandsExecutionLogStatusEnum::Created,
+                $maxThreads,
+                true
+            );
+        } catch (GetByParentCommandIdAndStatusServiceException $exception) {
+            $this->transaction->rollback();
+
+            throw $exception;
+        }
 
         $processes = [];
 
@@ -81,11 +91,15 @@ class SimpleByProcessesNotifyWorkerCommand extends Command
             $process->start();
             $processes[$command->getId()] = $process;
 
-            $this->updateStatusAndCommandPidByCommandIdService->handle(
-                $command->getId(),
-                CommandsExecutionLogStatusEnum::Started,
-                $process->getPid()
-            );
+            try {
+                $this->updateStatusAndCommandPidByCommandIdService->handle(
+                    $command->getId(),
+                    CommandsExecutionLogStatusEnum::Started,
+                    $process->getPid()
+                );
+            } catch (UpdateStatusAndCommandPidByCommandIdServiceException) {
+                //TODO log
+            }
         }
 
         $this->transaction->commit();
@@ -101,39 +115,47 @@ class SimpleByProcessesNotifyWorkerCommand extends Command
                 if ($runningProcess->isRunning() === false) {
                     unset($processes[$commandId]);
 
-                    $this->updateStatusByCommandIdService->handle(
-                        $commandId,
-                        $runningProcess->getExitCode() ? CommandsExecutionLogStatusEnum::Failed : CommandsExecutionLogStatusEnum::Success
+                    try {
+                        $this->updateStatusByCommandIdService->handle(
+                            $commandId,
+                            $runningProcess->getExitCode() ? CommandsExecutionLogStatusEnum::Failed : CommandsExecutionLogStatusEnum::Success
+                        );
+                    } catch (UpdateStatusByCommandIdServiceException) {
+                        //TODO log
+                    }
+                }
+
+                try {
+                    $this->transaction->begin();
+
+                    $command = $this->findByParentCommandIdAndStatusService->handle(
+                        $parentCommandId,
+                        CommandsExecutionLogStatusEnum::Created,
+                        true
                     );
-                }
 
-                $this->transaction->begin();
+                    if ($command === null) {
+                        $this->transaction->commit();
 
-                $command = $this->findByParentCommandIdAndStatusService->handle(
-                    $parentCommandId,
-                    CommandsExecutionLogStatusEnum::Created,
-                    true
-                );
+                        break;
+                    }
 
-                if ($command === null) {
+                    $process = $this->processCreatorHelper->create($command->getCommand());
+                    $process->setTimeout(0);
+                    $process->disableOutput();
+                    $process->start();
+                    $processes[$command->getId()] = $process;
+
+                    $this->updateStatusAndCommandPidByCommandIdService->handle(
+                        $command->getId(),
+                        CommandsExecutionLogStatusEnum::Started,
+                        $process->getPid()
+                    );
+
                     $this->transaction->commit();
-
-                    break;
+                } catch (FindByParentCommandIdAndStatusServiceException | UpdateStatusAndCommandPidByCommandIdServiceException) {
+                    //TODO log
                 }
-
-                $process = $this->processCreatorHelper->create($command->getCommand());
-                $process->setTimeout(0);
-                $process->disableOutput();
-                $process->start();
-                $processes[$command->getId()] = $process;
-
-                $this->updateStatusAndCommandPidByCommandIdService->handle(
-                    $command->getId(),
-                    CommandsExecutionLogStatusEnum::Started,
-                    $process->getPid()
-                );
-
-                $this->transaction->commit();
             }
         }
 

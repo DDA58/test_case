@@ -8,6 +8,7 @@ use App\Core\Database\Transaction\TransactionInterface;
 use App\Modules\Notify\Dto\EmailForNotifyDto;
 use App\Modules\Notify\Enum\EmailTypeEnum;
 use App\Modules\Notify\Service\EmailChecker\EmailCheckerServiceInterface;
+use App\Modules\Notify\Service\FindNotifyEmail\Exception\FindNotifyEmailServiceException;
 use App\Modules\Notify\Service\FindNotifyEmail\FindNotifyEmailServiceInterface;
 use App\Modules\Notify\Service\RenderEmail\RenderEmailServiceInterface;
 use App\Modules\Notify\Service\SendEmail\SendEmailServiceInterface;
@@ -25,13 +26,19 @@ readonly class SendEmailUseCase implements SendEmailUseCaseInterface
     ) {
     }
 
+    /**
+     * @inheritDoc
+     */
     public function handle(int $commandId, iterable $emailIds, EmailTypeEnum $emailType): void
     {
         foreach ($emailIds as $emailId) {
-            $emailId = (int)$emailId;
             $this->transaction->begin();
 
-            $email = $this->findNotifyEmailService->findByEmailId(new EmailId($emailId), true);
+            try {
+                $email = $this->findNotifyEmailService->findByEmailId(new EmailId($emailId), true);
+            } catch (FindNotifyEmailServiceException) {
+                $email = null;
+            }
 
             if ($email === null) {
                 $this->transaction->rollback();

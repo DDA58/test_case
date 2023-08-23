@@ -5,32 +5,51 @@ declare(strict_types=1);
 namespace App\Core\Database\Transaction;
 
 use App\Core\Database\Connection\GetDatabaseConnectionInterface;
+use PDOException;
 use Throwable;
 
-readonly class Transaction implements TransactionInterface
+class Transaction implements TransactionInterface
 {
+    private int $transactionCounter = 0;
+
     public function __construct(
-        private GetDatabaseConnectionInterface $getDatabaseConnection
+        private readonly GetDatabaseConnectionInterface $getDatabaseConnection
     ) {
     }
 
     public function begin(): TransactionInterface
     {
-        $this->getDatabaseConnection->handle()->beginTransaction();
+        $this->transactionCounter === 0
+            ? $this->getDatabaseConnection->handle()->beginTransaction()
+            : $this->getDatabaseConnection->handle()->exec('SAVEPOINT trans' . $this->transactionCounter);
+
+        $this->transactionCounter++;
 
         return $this;
     }
 
     public function commit(): TransactionInterface
     {
-        $this->getDatabaseConnection->handle()->commit();
+        $this->transactionCounter--;
+
+        $this->transactionCounter === 0
+            ? $this->getDatabaseConnection->handle()->commit()
+            : $this->getDatabaseConnection->handle()->exec('RELEASE SAVEPOINT trans' . $this->transactionCounter);
 
         return $this;
     }
 
     public function rollback(): TransactionInterface
     {
-        $this->getDatabaseConnection->handle()->rollBack();
+        if ($this->transactionCounter === 0) {
+            throw new PDOException('Rollback error : There is no transaction started');
+        }
+
+        $this->transactionCounter--;
+
+        $this->transactionCounter === 0
+            ? $this->getDatabaseConnection->handle()->rollBack()
+            : $this->getDatabaseConnection->handle()->exec('ROLLBACK TO trans' . ($this->transactionCounter));
 
         return $this;
     }
@@ -40,6 +59,7 @@ readonly class Transaction implements TransactionInterface
         try {
             $this->begin();
 
+            /** @var mixed $result */
             $result = $callback();
 
             $this->commit();
@@ -54,6 +74,6 @@ readonly class Transaction implements TransactionInterface
 
     public function __destruct()
     {
-        $this->getDatabaseConnection->handle()->inTransaction() && $this->rollback();
+//        $this->transactionCounter > 0 && $this->getDatabaseConnection->handle()->inTransaction() && $this->rollback();
     }
 }

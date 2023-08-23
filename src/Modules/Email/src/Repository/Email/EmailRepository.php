@@ -7,8 +7,10 @@ namespace App\Modules\Email\Repository\Email;
 use App\Core\Database\Connection\GetDatabaseConnectionInterface;
 use App\Modules\Email\Dto\EmailWithExpiredSubscriptionDto;
 use App\Modules\Email\Dto\EmailWithPreExpirationSubscriptionDto;
+use App\Modules\Email\Repository\Email\Exception\EmailRepositoryException;
 use App\Modules\Shared\ValueObject\EmailId;
 use PDO;
+use Throwable;
 
 readonly class EmailRepository implements EmailRepositoryInterface
 {
@@ -19,35 +21,43 @@ readonly class EmailRepository implements EmailRepositoryInterface
 
     public function getEmailsWithExpiredSubscription(): iterable
     {
-        $statement = $this->getDatabaseConnection->handle()->prepare(
-            'SELECT emails.id as `email_id`
+        try {
+            $statement = $this->getDatabaseConnection->handle()->prepare(
+                'SELECT emails.id as `email_id`
 FROM users
 JOIN emails FORCE INDEX FOR JOIN (`emails_user_uuid_IDX`) ON emails.user_uuid = users.uuid AND emails.is_last = 1
 WHERE validts > 0
 AND DATEDIFF(CURDATE(), FROM_UNIXTIME(validts)) > 0'
-        );
-        $statement->execute();
+            );
+            $statement->execute();
 
-        while ($row = $statement->fetch(PDO::FETCH_OBJ)) {
-            yield new EmailWithExpiredSubscriptionDto($row->email_id);
+            while ($row = $statement->fetch(PDO::FETCH_OBJ)) {
+                yield new EmailWithExpiredSubscriptionDto((int)$row->email_id);
+            }
+        } catch (Throwable $t) {
+            throw new EmailRepositoryException($t->getMessage(), (int)$t->getCode(), $t);
         }
     }
 
     public function getEmailsWithPreExpirationSubscription(int $daysBeforeExpiration): iterable
     {
-        $statement = $this->getDatabaseConnection->handle()->prepare(
-            'SELECT emails.id as `email_id`
+        try {
+            $statement = $this->getDatabaseConnection->handle()->prepare(
+                'SELECT emails.id as `email_id`
 FROM users
 JOIN emails FORCE INDEX FOR JOIN (`emails_user_uuid_IDX`) ON emails.user_uuid = users.uuid AND emails.is_last = 1
 WHERE validts > 0
 AND DATEDIFF(CURDATE(), FROM_UNIXTIME(validts)) = ?'
-        );
-        $statement->execute([
-            '-' . $daysBeforeExpiration
-        ]);
+            );
+            $statement->execute([
+                '-' . $daysBeforeExpiration
+            ]);
 
-        while ($row = $statement->fetch(PDO::FETCH_OBJ)) {
-            yield new EmailWithPreExpirationSubscriptionDto($row->email_id);
+            while ($row = $statement->fetch(PDO::FETCH_OBJ)) {
+                yield new EmailWithPreExpirationSubscriptionDto((int)$row->email_id);
+            }
+        } catch (Throwable $t) {
+            throw new EmailRepositoryException($t->getMessage(), (int)$t->getCode(), $t);
         }
     }
 
@@ -56,17 +66,21 @@ AND DATEDIFF(CURDATE(), FROM_UNIXTIME(validts)) = ?'
         bool $isChecked,
         bool $isValid
     ): bool {
-        $statement = $this->getDatabaseConnection->handle()->prepare(
-            'UPDATE emails
+        try {
+            $statement = $this->getDatabaseConnection->handle()->prepare(
+                'UPDATE emails
         SET `checked` = ?,
             `valid` = ?
         WHERE id = ?'
-        );
+            );
 
-        return $statement->execute([
-            (int)$isChecked,
-            (int)$isValid,
-            $id->getValue(),
-        ]);
+            return $statement->execute([
+                (int)$isChecked,
+                (int)$isValid,
+                $id->getValue(),
+            ]);
+        } catch (Throwable $t) {
+            throw new EmailRepositoryException($t->getMessage(), (int)$t->getCode(), $t);
+        }
     }
 }

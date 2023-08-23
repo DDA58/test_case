@@ -12,8 +12,15 @@ readonly class StartCommandLogSubscriber implements EventSubscriberInterface
 {
     public function handle(ConsoleCommandEvent $event): void
     {
+        $command = $event->getCommand();
+
+        if ($command === null) {
+            return;
+        }
+
+        /** @psalm-suppress PossiblyNullArgument */
         $event->getOutput()->writeln(
-            sprintf('Start command "%s". PID: %s', $event->getCommand()->getName(), getmypid())
+            sprintf('Start command "%s". PID: %s', $command->getName(), getmypid())
         );
     }
 

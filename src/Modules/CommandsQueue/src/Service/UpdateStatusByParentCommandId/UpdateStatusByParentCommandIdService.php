@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Modules\CommandsQueue\Service\UpdateStatusByParentCommandId;
 
 use App\Modules\CommandsQueue\Repository\CommandsQueue\CommandsQueueRepositoryInterface;
+use App\Modules\CommandsQueue\Repository\CommandsQueue\Exception\CommandsQueueRepositoryException;
+use App\Modules\CommandsQueue\Service\UpdateStatusByParentCommandId\Exception\UpdateStatusByParentCommandIdServiceException;
 use App\Modules\Shared\Enum\CommandsExecutionLogStatusEnum;
 
 readonly class UpdateStatusByParentCommandIdService implements
@@ -19,6 +21,10 @@ readonly class UpdateStatusByParentCommandIdService implements
         int $parentCommandId,
         CommandsExecutionLogStatusEnum $status
     ): bool {
-        return $this->commandsQueueRepository->updateStatusByParentCommandId($parentCommandId, $status);
+        try {
+            return $this->commandsQueueRepository->updateStatusByParentCommandId($parentCommandId, $status);
+        } catch (CommandsQueueRepositoryException $exception) {
+            throw new UpdateStatusByParentCommandIdServiceException($exception->getMessage(), $exception->getCode(), $exception);
+        }
     }
 }

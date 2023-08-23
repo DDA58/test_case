@@ -35,7 +35,12 @@ class NotifyAfterSubscriptionExpiredCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $commandId = (int)$input->getOption(self::COMMAND_ID_OPTION);
-        $emailIds = explode(',', $input->getOption(self::EMAIL_IDS_OPTION));
+        $emailIds = array_map(
+            static fn(string $emailId): int => (int)$emailId,
+            array_filter(
+                explode(',', (string)$input->getOption(self::EMAIL_IDS_OPTION))
+            )
+        );
 
         if ($emailIds === [] || $commandId === 0) {
             return Command::INVALID;

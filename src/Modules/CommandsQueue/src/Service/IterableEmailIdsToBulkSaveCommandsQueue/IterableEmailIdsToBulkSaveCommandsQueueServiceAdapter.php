@@ -7,6 +7,8 @@ namespace App\Modules\CommandsQueue\Service\IterableEmailIdsToBulkSaveCommandsQu
 use App\Modules\CommandsQueue\Dto\IterableEmailIdsToBulkSaveCommandsQueueServiceAdapterDto;
 use App\Modules\CommandsQueue\Dto\SaveCommandsQueueDto;
 use App\Modules\CommandsQueue\Service\BulkSaveCommandsQueue\BulkSaveCommandsQueueServiceInterface;
+use App\Modules\CommandsQueue\Service\BulkSaveCommandsQueue\Exception\BulkSaveCommandsQueueServiceException;
+use App\Modules\CommandsQueue\Service\IterableEmailIdsToBulkSaveCommandsQueue\Exception\IterableEmailIdsToBulkSaveCommandsQueueServiceAdapterException;
 
 readonly class IterableEmailIdsToBulkSaveCommandsQueueServiceAdapter implements
     IterableEmailIdsToBulkSaveCommandsQueueServiceAdapterInterface
@@ -18,11 +20,18 @@ readonly class IterableEmailIdsToBulkSaveCommandsQueueServiceAdapter implements
 
     public function handle(IterableEmailIdsToBulkSaveCommandsQueueServiceAdapterDto $dto): void
     {
-        $this->bulkSaveCommandsQueueService->handle(
-            $this->makeIterableCommands($dto)
-        );
+        try {
+            $this->bulkSaveCommandsQueueService->handle(
+                $this->makeIterableCommands($dto)
+            );
+        } catch (BulkSaveCommandsQueueServiceException $exception) {
+            throw new IterableEmailIdsToBulkSaveCommandsQueueServiceAdapterException($exception->getMessage(), $exception->getCode(), $exception);
+        }
     }
 
+    /**
+     * @return iterable<int, SaveCommandsQueueDto>
+     */
     private function makeIterableCommands(IterableEmailIdsToBulkSaveCommandsQueueServiceAdapterDto $dto): iterable
     {
         $commandTemplate = $dto->getCommandTemplate();
@@ -31,7 +40,6 @@ readonly class IterableEmailIdsToBulkSaveCommandsQueueServiceAdapter implements
         $commandStatus = $dto->getStatus();
         $emailIdsInCommand = [];
 
-        //TODO Add before_created status
         foreach ($dto->getEmails() as $row) {
             if (count($emailIdsInCommand) === $dto->getEmailsPerCommand()) {
                 yield new SaveCommandsQueueDto(

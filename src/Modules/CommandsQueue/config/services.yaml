@@ -15,6 +15,7 @@ services:
     exclude:
       - '../src/Dto'
       - '../src/Entity'
+      - '../src/Exception'
 
   App\Modules\CommandsQueue\Command\SimpleByProcessesNotifyWorkerCommand:
     arguments:

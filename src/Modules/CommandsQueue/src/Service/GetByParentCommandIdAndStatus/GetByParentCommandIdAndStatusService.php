@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Modules\CommandsQueue\Service\GetByParentCommandIdAndStatus;
 
 use App\Modules\CommandsQueue\Repository\CommandsQueue\CommandsQueueRepositoryInterface;
+use App\Modules\CommandsQueue\Repository\CommandsQueue\Exception\CommandsQueueRepositoryException;
+use App\Modules\CommandsQueue\Service\GetByParentCommandIdAndStatus\Exception\GetByParentCommandIdAndStatusServiceException;
 use App\Modules\Shared\Enum\CommandsExecutionLogStatusEnum;
 
 readonly class GetByParentCommandIdAndStatusService implements GetByParentCommandIdAndStatusServiceInterface
@@ -23,11 +25,15 @@ readonly class GetByParentCommandIdAndStatusService implements GetByParentComman
         int $limit,
         bool $forUpdate = false
     ): iterable {
-        return $this->commandsQueueRepository->getByParentCommandIdAndStatus(
-            $parentCommandId,
-            $status,
-            $limit,
-            $forUpdate
-        );
+        try {
+            return $this->commandsQueueRepository->getByParentCommandIdAndStatus(
+                $parentCommandId,
+                $status,
+                $limit,
+                $forUpdate
+            );
+        } catch (CommandsQueueRepositoryException $exception) {
+            throw new GetByParentCommandIdAndStatusServiceException($exception->getMessage(), $exception->getCode(), $exception);
+        }
     }
 }

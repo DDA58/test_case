@@ -8,6 +8,9 @@ use App\Modules\Notify\Enum\EmailTypeEnum;
 
 interface SendEmailUseCaseInterface
 {
+    /**
+     * @param iterable<int> $emailIds
+     */
     public function handle(
         int $commandId,
         iterable $emailIds,

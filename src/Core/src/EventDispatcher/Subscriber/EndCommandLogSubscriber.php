@@ -17,10 +17,17 @@ readonly class EndCommandLogSubscriber implements EventSubscriberInterface
 
     public function handle(ConsoleTerminateEvent $event): void
     {
+        $command = $event->getCommand();
+
+        if ($command === null) {
+            return;
+        }
+
+        /** @psalm-suppress PossiblyNullArgument */
         $event->getOutput()->writeln(
             sprintf(
                 'End command "%s". PID: %s. Time: %f',
-                $event->getCommand()->getName(),
+                $command->getName(),
                 getmypid(),
                 microtime(true) - $this->startExecutionTime
             )

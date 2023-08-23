@@ -6,6 +6,8 @@ namespace App\Modules\Notify\Service\FindNotifyEmail;
 
 use App\Modules\Notify\Dto\EmailForNotifyDto;
 use App\Modules\Notify\Repository\EmailForNotify\EmailForNotifyRepositoryInterface;
+use App\Modules\Notify\Repository\EmailForNotify\Exception\EmailForNotifyRepositoryException;
+use App\Modules\Notify\Service\FindNotifyEmail\Exception\FindNotifyEmailServiceException;
 use App\Modules\Shared\ValueObject\EmailId;
 
 readonly class FindNotifyEmailService implements FindNotifyEmailServiceInterface
@@ -17,6 +19,10 @@ readonly class FindNotifyEmailService implements FindNotifyEmailServiceInterface
 
     public function findByEmailId(EmailId $emailId, bool $forUpdate = false): ?EmailForNotifyDto
     {
-        return $this->emailForNotifyRepository->findByEmailId($emailId, $forUpdate);
+        try {
+            return $this->emailForNotifyRepository->findByEmailId($emailId, $forUpdate);
+        } catch (EmailForNotifyRepositoryException $exception) {
+            throw new FindNotifyEmailServiceException($exception->getMessage(), $exception->getCode(), $exception);
+        }
     }
 }

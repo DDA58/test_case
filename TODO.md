@@ -1,0 +1,7 @@
+- Add logger
+- Add kibana?
+- Mv getmypid() in service
+- Change from email_ids to email_id - one email per one command
+- Start several workers by command option or supervisor
+- Return ATTR_AUTOCOMMIT=0 in GetDatabaseConnection
+- Add tests

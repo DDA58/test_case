@@ -6,6 +6,8 @@ namespace App\Modules\Notify\Service\SaveEmailsSendLog;
 
 use App\Modules\Notify\Dto\SaveEmailsSendLogDto;
 use App\Modules\Notify\Repository\EmailsSendLog\EmailsSendLogRepository;
+use App\Modules\Notify\Repository\EmailsSendLog\Exception\EmailsSendLogRepositoryException;
+use App\Modules\Notify\Service\SaveEmailsSendLog\Exception\SaveEmailsSendLogServiceException;
 
 readonly class SaveEmailsSendLogService implements SaveEmailsSendLogServiceInterface
 {
@@ -16,6 +18,10 @@ readonly class SaveEmailsSendLogService implements SaveEmailsSendLogServiceInter
 
     public function handle(SaveEmailsSendLogDto $dto): bool
     {
-        return $this->emailsSendLogRepository->save($dto);
+        try {
+            return $this->emailsSendLogRepository->save($dto);
+        } catch (EmailsSendLogRepositoryException $exception) {
+            throw new SaveEmailsSendLogServiceException($exception->getMessage(), $exception->getCode(), $exception);
+        }
     }
 }

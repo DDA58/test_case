@@ -6,6 +6,8 @@ namespace App\Modules\CommandsQueue\Service\BulkSaveCommandsQueue;
 
 use App\Core\Database\Transaction\TransactionInterface;
 use App\Modules\CommandsQueue\Repository\CommandsQueue\CommandsQueueRepositoryInterface;
+use App\Modules\CommandsQueue\Repository\CommandsQueue\Exception\CommandsQueueRepositoryException;
+use App\Modules\CommandsQueue\Service\BulkSaveCommandsQueue\Exception\BulkSaveCommandsQueueServiceException;
 use Throwable;
 
 readonly class BulkSaveCommandsQueueService implements BulkSaveCommandsQueueServiceInterface
@@ -35,7 +37,6 @@ readonly class BulkSaveCommandsQueueService implements BulkSaveCommandsQueueServ
 
                     $buffer = [];
                 }
-
             }
 
             if ($buffer !== []) {
@@ -43,10 +44,10 @@ readonly class BulkSaveCommandsQueueService implements BulkSaveCommandsQueueServ
             }
 
             $this->transaction->commit();
-        } catch (Throwable $throwable) {
+        } catch (CommandsQueueRepositoryException $exception) {
             $this->transaction->rollback();
 
-            throw $throwable;
+            throw new BulkSaveCommandsQueueServiceException($exception->getMessage(), $exception->getCode(), $exception);
         }
     }
 }

@@ -6,6 +6,7 @@ namespace App\Core\Command;
 
 use App\Core\Database\Connection\GetDatabaseConnectionInterface;
 use FilesystemIterator;
+use SplFileInfo;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -30,8 +31,13 @@ class InitDatabaseCommand extends Command
 
         $filesPaths = [];
 
+        /** @var SplFileInfo $fileInfo */
         foreach (new FilesystemIterator(sprintf('%s/database/skeleton', $this->appPath), FilesystemIterator::CURRENT_AS_SELF | FilesystemIterator::SKIP_DOTS) as $fileInfo) {
-            $filesPaths[] = $fileInfo->getRealPath();
+            $path = $fileInfo->getRealPath();
+
+            if ($path !== false) {
+                $filesPaths[] = $path;
+            }
         }
 
         sort($filesPaths);

@@ -6,5 +6,4 @@ namespace App\Modules\Shared\ValueObject;
 
 class UserId
 {
-
 }

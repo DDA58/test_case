@@ -6,13 +6,16 @@ namespace App\Modules\Notify\Service\RenderEmail;
 
 use App\Modules\Notify\Enum\EmailTypeEnum;
 
-readonly class RenderEmailService implements RenderEmailServiceInterface
+readonly class SimpleRenderEmailService implements RenderEmailServiceInterface
 {
+    /**
+     * @inheritDoc
+     */
     public function handle(
         EmailTypeEnum $type,
         array $params = []
     ): string {
-        $template = match($type) {
+        $template = match ($type) {
             EmailTypeEnum::BeforeOneDay => '%s, your subscription is expiring in one day',
             EmailTypeEnum::BeforeThreeDays => '%s, your subscription is expiring in three day',
             EmailTypeEnum::BeforeSubscriptionExpiration => '%s, your subscription is expiring soon',

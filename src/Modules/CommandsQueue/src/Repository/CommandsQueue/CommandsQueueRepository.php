@@ -7,11 +7,11 @@ namespace App\Modules\CommandsQueue\Repository\CommandsQueue;
 use App\Core\Database\Connection\GetDatabaseConnectionInterface;
 use App\Modules\CommandsQueue\Dto\SaveCommandsQueueDto;
 use App\Modules\CommandsQueue\Entity\CommandsQueueEntity;
-use App\Modules\Notify\Dto\EmailForNotifyDto;
+use App\Modules\CommandsQueue\Repository\CommandsQueue\Exception\CommandsQueueRepositoryException;
 use App\Modules\Shared\Enum\CommandsExecutionLogStatusEnum;
-use App\Modules\Shared\ValueObject\EmailId;
 use DateTimeImmutable;
 use PDO;
+use Throwable;
 
 readonly class CommandsQueueRepository implements CommandsQueueRepositoryInterface
 {
@@ -22,20 +22,24 @@ readonly class CommandsQueueRepository implements CommandsQueueRepositoryInterfa
 
     public function save(SaveCommandsQueueDto $saveCommandsQueueDto): int
     {
-        $connection = $this->getDatabaseConnection->handle();
+        try {
+            $connection = $this->getDatabaseConnection->handle();
 
-        $statement = $connection->prepare(
-            'INSERT INTO commands_queue(`command`, `command_pid`, `parent_command_id`, `status`) VALUES(?, ?, ?, ?)'
-        );
-        $statement->execute([
-            $saveCommandsQueueDto->getCommand(),
-            $saveCommandsQueueDto->getCommandPid(),
-            $saveCommandsQueueDto->getParentCommandId(),
-            $saveCommandsQueueDto->getStatus()->value
-        ]);
+            $statement = $connection->prepare(
+                'INSERT INTO commands_queue(`command`, `command_pid`, `parent_command_id`, `status`) VALUES(?, ?, ?, ?)'
+            );
+            $statement->execute([
+                $saveCommandsQueueDto->getCommand(),
+                $saveCommandsQueueDto->getCommandPid(),
+                $saveCommandsQueueDto->getParentCommandId(),
+                $saveCommandsQueueDto->getStatus()->value
+            ]);
 
-        //TODO check before casts on types
-        return (int)$connection->lastInsertId();
+            //TODO check before casts on types
+            return (int)$connection->lastInsertId();
+        } catch (Throwable $throwable) {
+            throw new CommandsQueueRepositoryException($throwable->getMessage(), (int)$throwable->getCode(), $throwable);
+        }
     }
 
     /**
@@ -43,73 +47,89 @@ readonly class CommandsQueueRepository implements CommandsQueueRepositoryInterfa
      */
     public function bulkSave(iterable $commands): bool
     {
-        $connection = $this->getDatabaseConnection->handle();
+        try {
+            $connection = $this->getDatabaseConnection->handle();
 
-        $placeholders = '';
-        $params = [];
+            $placeholders = '';
+            $params = [];
 
-        foreach ($commands as $saveCommandsQueueDto) {
-            $placeholders .= '(?, ?, ?, ?),';
-            $params[] = $saveCommandsQueueDto->getCommand();
-            $params[] = $saveCommandsQueueDto->getCommandPid();
-            $params[] = $saveCommandsQueueDto->getParentCommandId();
-            $params[] = $saveCommandsQueueDto->getStatus()->value;
+            foreach ($commands as $saveCommandsQueueDto) {
+                $placeholders .= '(?, ?, ?, ?),';
+                $params[] = $saveCommandsQueueDto->getCommand();
+                $params[] = $saveCommandsQueueDto->getCommandPid();
+                $params[] = $saveCommandsQueueDto->getParentCommandId();
+                $params[] = $saveCommandsQueueDto->getStatus()->value;
+            }
+
+            if ($params === []) {
+                return true;
+            }
+
+            $placeholders = rtrim($placeholders, ',');
+
+            $statement = $connection->prepare(
+                'INSERT INTO commands_queue(`command`, `command_pid`, `parent_command_id`, `status`) VALUES' . $placeholders
+            );
+
+            return $statement->execute($params);
+        } catch (Throwable $throwable) {
+            throw new CommandsQueueRepositoryException($throwable->getMessage(), (int)$throwable->getCode(), $throwable);
         }
-
-        if ($params === []) {
-            return true;
-        }
-
-        $placeholders = rtrim($placeholders, ',');
-
-        $statement = $connection->prepare(
-            'INSERT INTO commands_queue(`command`, `command_pid`, `parent_command_id`, `status`) VALUES' . $placeholders
-        );
-
-        return $statement->execute($params);
     }
 
     public function concatCommandIdToColumnByParentCommandId(int $parentCommandId): bool
     {
-        $connection = $this->getDatabaseConnection->handle();
+        try {
+            $connection = $this->getDatabaseConnection->handle();
 
-        $statement = $connection->prepare(
-            'UPDATE commands_queue
+            $statement = $connection->prepare(
+                'UPDATE commands_queue
             SET `command` = CONCAT(`command`, " --command_id=", `id`)
             WHERE parent_command_id = ?'
-        );
+            );
 
-        return $statement->execute([$parentCommandId]);
+            return $statement->execute([$parentCommandId]);
+        } catch (Throwable $throwable) {
+            throw new CommandsQueueRepositoryException($throwable->getMessage(), (int)$throwable->getCode(), $throwable);
+        }
     }
 
     public function updateStatusByParentCommandId(
         int $parentCommandId,
         CommandsExecutionLogStatusEnum $status
     ): bool {
-        $connection = $this->getDatabaseConnection->handle();
+        try {
+            $connection = $this->getDatabaseConnection->handle();
 
-        $statement = $connection->prepare(
-            'UPDATE commands_queue
+            $statement = $connection->prepare(
+                'UPDATE commands_queue
             SET `status` = ?
             WHERE parent_command_id = ?'
-        );
+            );
 
-        return $statement->execute([$status->value, $parentCommandId]);
+            return $statement->execute([$status->value, $parentCommandId]);
+        } catch (Throwable $throwable) {
+            throw new CommandsQueueRepositoryException($throwable->getMessage(), (int)$throwable->getCode(), $throwable);
+        }
     }
 
     public function updateStatusByCommandId(
         int $commandId,
         CommandsExecutionLogStatusEnum $status
     ): bool {
-        $connection = $this->getDatabaseConnection->handle();
+        try {
+            $connection = $this->getDatabaseConnection->handle();
 
-        $statement = $connection->prepare(
-            'UPDATE commands_queue
+            $statement = $connection->prepare(
+                'UPDATE commands_queue
             SET `status` = ?
             WHERE id = ?'
-        );
+            );
 
-        return $statement->execute([$status->value, $commandId]);
+            return $statement->execute([$status->value, $commandId]);
+        } catch (Throwable $throwable) {
+            throw new CommandsQueueRepositoryException($throwable->getMessage(), (int)$throwable->getCode(), $throwable);
+        }
     }
 
     /**
@@ -121,30 +141,34 @@ readonly class CommandsQueueRepository implements CommandsQueueRepositoryInterfa
         int $limit,
         bool $forUpdate = false
     ): iterable {
-        $connection = $this->getDatabaseConnection->handle();
+        try {
+            $connection = $this->getDatabaseConnection->handle();
 
-        $statement = $connection->prepare(sprintf(
-            'SELECT id, `command`, command_pid, created_at
+            $statement = $connection->prepare(sprintf(
+                'SELECT id, `command`, command_pid, created_at
             FROM commands_queue
             WHERE parent_command_id = ?
                 AND `status` = ?
             LIMIT %d' . ($forUpdate ? ' FOR UPDATE' : ''),
-            $limit
-        ));
-        $statement->execute([
-            $parentCommandId,
-            $status->value
-        ]);
-
-        while ($row = $statement->fetch(PDO::FETCH_OBJ)) {
-            yield new CommandsQueueEntity(
-                $row->id,
-                $row->command,
-                $row->command_pid,
+                $limit
+            ));
+            $statement->execute([
                 $parentCommandId,
-                $status,
-                new DateTimeImmutable($row->created_at)
-            );
+                $status->value
+            ]);
+
+            while ($row = $statement->fetch(PDO::FETCH_OBJ)) {
+                yield new CommandsQueueEntity(
+                    (int)$row->id,
+                    (string)$row->command,
+                    $row->command_pid === null ? null : (int)$row->command_pid,
+                    $parentCommandId,
+                    $status,
+                    new DateTimeImmutable((string)$row->created_at)
+                );
+            }
+        } catch (Throwable $throwable) {
+            throw new CommandsQueueRepositoryException($throwable->getMessage(), (int)$throwable->getCode(), $throwable);
         }
     }
 
@@ -153,16 +177,20 @@ readonly class CommandsQueueRepository implements CommandsQueueRepositoryInterfa
         CommandsExecutionLogStatusEnum $status,
         ?int $commandPid,
     ): bool {
-        $connection = $this->getDatabaseConnection->handle();
+        try {
+            $connection = $this->getDatabaseConnection->handle();
 
-        $statement = $connection->prepare(
-            'UPDATE commands_queue
+            $statement = $connection->prepare(
+                'UPDATE commands_queue
             SET `status` = ?
             , command_pid = ?
             WHERE id = ?'
-        );
+            );
 
-        return $statement->execute([$status->value, $commandPid, $commandId]);
+            return $statement->execute([$status->value, $commandPid, $commandId]);
+        } catch (Throwable $throwable) {
+            throw new CommandsQueueRepositoryException($throwable->getMessage(), (int)$throwable->getCode(), $throwable);
+        }
     }
 
     public function findByParentCommandIdAndStatus(
@@ -170,12 +198,16 @@ readonly class CommandsQueueRepository implements CommandsQueueRepositoryInterfa
         CommandsExecutionLogStatusEnum $status,
         bool $forUpdate = false
     ): ?CommandsQueueEntity {
-        $commands = $this->getByParentCommandIdAndStatus($parentCommandId, $status, 1, $forUpdate);
+        try {
+            $commands = $this->getByParentCommandIdAndStatus($parentCommandId, $status, 1, $forUpdate);
 
-        foreach ($commands as $command) {
-            return $command;
+            foreach ($commands as $command) {
+                return $command;
+            }
+
+            return null;
+        } catch (Throwable $throwable) {
+            throw new CommandsQueueRepositoryException($throwable->getMessage(), (int)$throwable->getCode(), $throwable);
         }
-
-        return null;
     }
 }

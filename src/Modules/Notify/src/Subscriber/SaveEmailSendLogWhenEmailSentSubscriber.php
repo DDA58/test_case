@@ -6,6 +6,7 @@ namespace App\Modules\Notify\Subscriber;
 
 use App\Modules\Notify\Dto\SaveEmailsSendLogDto;
 use App\Modules\Notify\Event\EmailSentSuccessfulEvent;
+use App\Modules\Notify\Service\SaveEmailsSendLog\Exception\SaveEmailsSendLogServiceException;
 use App\Modules\Notify\Service\SaveEmailsSendLog\SaveEmailsSendLogServiceInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -25,13 +26,17 @@ readonly class SaveEmailSendLogWhenEmailSentSubscriber implements EventSubscribe
 
     public function handle(EmailSentSuccessfulEvent $event): void
     {
-        $this->saveEmailsSendLogService->handle(new SaveEmailsSendLogDto(
-            $event->getType(),
-            $event->getCommandId(),
-            $event->getEmailId(),
-            $event->isEmailConfirmed(),
-            $event->isEmailChecked(),
-            $event->isEmailValid(),
-        ));
+        try {
+            $this->saveEmailsSendLogService->handle(new SaveEmailsSendLogDto(
+                $event->getType(),
+                $event->getCommandId(),
+                $event->getEmailId(),
+                $event->isEmailConfirmed(),
+                $event->isEmailChecked(),
+                $event->isEmailValid(),
+            ));
+        } catch (SaveEmailsSendLogServiceException) {
+            //TODO log
+        }
     }
 }

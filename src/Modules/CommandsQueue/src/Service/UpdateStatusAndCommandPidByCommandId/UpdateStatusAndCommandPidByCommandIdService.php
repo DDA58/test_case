@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Modules\CommandsQueue\Service\UpdateStatusAndCommandPidByCommandId;
 
 use App\Modules\CommandsQueue\Repository\CommandsQueue\CommandsQueueRepositoryInterface;
+use App\Modules\CommandsQueue\Repository\CommandsQueue\Exception\CommandsQueueRepositoryException;
+use App\Modules\CommandsQueue\Service\UpdateStatusAndCommandPidByCommandId\Exception\UpdateStatusAndCommandPidByCommandIdServiceException;
 use App\Modules\Shared\Enum\CommandsExecutionLogStatusEnum;
 
 readonly class UpdateStatusAndCommandPidByCommandIdService implements
@@ -20,6 +22,10 @@ readonly class UpdateStatusAndCommandPidByCommandIdService implements
         CommandsExecutionLogStatusEnum $status,
         ?int $commandPid,
     ): bool {
-        return $this->commandsQueueRepository->updateStatusAndCommandPidByCommandId($commandId, $status, $commandPid);
+        try {
+            return $this->commandsQueueRepository->updateStatusAndCommandPidByCommandId($commandId, $status, $commandPid);
+        } catch (CommandsQueueRepositoryException $exception) {
+            throw new UpdateStatusAndCommandPidByCommandIdServiceException($exception->getMessage(), $exception->getCode(), $exception);
+        }
     }
 }
