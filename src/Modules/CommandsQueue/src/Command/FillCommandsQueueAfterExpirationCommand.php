@@ -17,6 +17,7 @@ use App\Modules\CommandsQueue\Service\UpdateStatusByParentCommandId\UpdateStatus
 use App\Modules\Email\Service\GetEmailsWithExpiredSubscription\GetEmailsWithExpiredSubscriptionServiceInterface;
 use App\Modules\Notify\Command\NotifyAfterSubscriptionExpiredCommand;
 use App\Modules\Shared\Enum\CommandsExecutionLogStatusEnum;
+use App\Modules\Shared\Helper\GetMyPid\GetMyPidHelperInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -38,6 +39,7 @@ class FillCommandsQueueAfterExpirationCommand extends Command
         private readonly UpdateStatusByCommandIdServiceInterface $updateStatusByCommandIdService,
         private readonly TransactionInterface $transaction,
         private readonly StartCommandQueueWorkerServiceInterface $startCommandQueueWorkerService,
+        private readonly GetMyPidHelperInterface $getMyPidHelper,
         private readonly string $appPath,
         private readonly string $phpBinaryPath,
         string $name = null,
@@ -70,7 +72,7 @@ class FillCommandsQueueAfterExpirationCommand extends Command
 
             $id = $this->saveCommandsQueueService->handle(new SaveCommandsQueueDto(
                 implode(' ', ['php', ...$_SERVER['argv'] ?? []]),
-                getmypid(),
+                $this->getMyPidHelper->get(),
                 null,
                 CommandsExecutionLogStatusEnum::Started
             ));

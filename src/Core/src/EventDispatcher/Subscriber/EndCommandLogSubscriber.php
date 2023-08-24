@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Core\EventDispatcher\Subscriber;
 
+use App\Modules\Shared\Helper\GetMyPid\GetMyPidHelperInterface;
 use Symfony\Component\Console\ConsoleEvents;
 use Symfony\Component\Console\Event\ConsoleTerminateEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -11,7 +12,8 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 readonly class EndCommandLogSubscriber implements EventSubscriberInterface
 {
     public function __construct(
-        private float $startExecutionTime
+        private GetMyPidHelperInterface $getMyPidHelper,
+        private float $startExecutionTime,
     ) {
     }
 
@@ -28,7 +30,7 @@ readonly class EndCommandLogSubscriber implements EventSubscriberInterface
             sprintf(
                 'End command "%s". PID: %s. Time: %f',
                 $command->getName(),
-                getmypid(),
+                $this->getMyPidHelper->get(),
                 microtime(true) - $this->startExecutionTime
             )
         );
