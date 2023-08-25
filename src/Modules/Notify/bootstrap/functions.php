@@ -18,8 +18,14 @@ function send_email(string $from, string $to, string $text): void
 
 function exception_log_and_notify(Throwable $throwable): void
 {
-    var_dump($throwable->getMessage());
-    //Kibana, sentry, tg, etc
+    var_dump(
+        $throwable->getMessage(),
+        $throwable->getFile()
+    );
+
+    //TODO Try Kibana, sentry, tg, etc
+
+    exit(1);
 }
 
 function error_log_and_notify(int $type, string $message, string $file, int $line): void
