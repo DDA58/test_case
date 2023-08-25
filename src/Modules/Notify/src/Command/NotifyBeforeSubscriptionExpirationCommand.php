@@ -6,6 +6,8 @@ namespace App\Modules\Notify\Command;
 
 use App\Modules\Notify\Service\BeforeSubscriptionExpirationEmailTypeDetector\BeforeSubscriptionExpirationEmailTypeDetectorServiceInterface;
 use App\Modules\Notify\UseCase\SendEmail\SendEmailUseCaseInterface;
+use App\Modules\Shared\Exception\InvalidArgumentException;
+use App\Modules\Shared\ValueObject\EmailId;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -16,7 +18,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 class NotifyBeforeSubscriptionExpirationCommand extends Command
 {
     private const DAYS_BEFORE_EXPIRATION = 'days_before_expiration';
-    private const EMAIL_IDS_OPTION = 'email_ids';
+    private const EMAIL_ID_OPTION = 'email_id';
     private const COMMAND_ID_OPTION = 'command_id';
 
     public function __construct(
@@ -31,22 +33,24 @@ class NotifyBeforeSubscriptionExpirationCommand extends Command
     {
         $this
             ->addOption(self::COMMAND_ID_OPTION, null, InputOption::VALUE_REQUIRED)
-            ->addOption(self::EMAIL_IDS_OPTION, null, InputOption::VALUE_REQUIRED)
+            ->addOption(self::EMAIL_ID_OPTION, null, InputOption::VALUE_REQUIRED)
             ->addOption(self::DAYS_BEFORE_EXPIRATION, null, InputOption::VALUE_REQUIRED);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $commandId = (int)$input->getOption(self::COMMAND_ID_OPTION);
-        $emailIds = array_map(
-            static fn(string $emailId): int => (int)$emailId,
-            array_filter(
-                explode(',', (string)$input->getOption(self::EMAIL_IDS_OPTION))
-            )
-        );
         $daysBeforeExpiration = (int)$input->getOption(self::DAYS_BEFORE_EXPIRATION);
 
-        if ($emailIds === [] || $commandId === 0 || $daysBeforeExpiration <= 0) {
+        try {
+            $emailId = new EmailId(
+                (int)$input->getOption(self::EMAIL_ID_OPTION)
+            );
+        } catch (InvalidArgumentException) {
+            return Command::INVALID;
+        }
+
+        if ($commandId === 0 || $daysBeforeExpiration <= 0) {
             return Command::INVALID;
         }
 
@@ -54,7 +58,7 @@ class NotifyBeforeSubscriptionExpirationCommand extends Command
 
         $this->sendEmailUseCase->handle(
             $commandId,
-            $emailIds,
+            $emailId,
             $emailType
         );
 

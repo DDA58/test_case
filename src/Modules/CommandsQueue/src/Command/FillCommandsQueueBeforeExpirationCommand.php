@@ -29,7 +29,6 @@ use Throwable;
 class FillCommandsQueueBeforeExpirationCommand extends Command
 {
     private const DAYS_BEFORE_EXPIRATION = 'days_before_expiration';
-    private const EMAILS_PER_COMMAND = 'emails_per_command';
 
     public function __construct(
         private readonly GetEmailsWithPreExpirationSubscriptionServiceInterface $getEmailsWithPreExpirationSubscriptionService,
@@ -51,8 +50,7 @@ class FillCommandsQueueBeforeExpirationCommand extends Command
     protected function configure(): void
     {
         $this
-            ->addOption(self::DAYS_BEFORE_EXPIRATION, null, InputOption::VALUE_REQUIRED)
-            ->addOption(self::EMAILS_PER_COMMAND, null, InputOption::VALUE_REQUIRED);
+            ->addOption(self::DAYS_BEFORE_EXPIRATION, null, InputOption::VALUE_REQUIRED);
     }
 
     /**
@@ -61,9 +59,8 @@ class FillCommandsQueueBeforeExpirationCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $daysBeforeExpiration = (int)$input->getOption(self::DAYS_BEFORE_EXPIRATION);
-        $emailsPerCommand = (int)$input->getOption(self::EMAILS_PER_COMMAND);
 
-        if ($daysBeforeExpiration <= 0 || $emailsPerCommand <= 0) {
+        if ($daysBeforeExpiration <= 0) {
             return Command::INVALID;
         }
 
@@ -92,9 +89,8 @@ class FillCommandsQueueBeforeExpirationCommand extends Command
 
             $this->emailIdsToBulkSaveCommandsQueueServiceAdapter->handle(new IterableEmailIdsToBulkSaveCommandsQueueServiceAdapterDto(
                 $emailIds,
-                sprintf('%s %s/bin/console %s --days_before_expiration=%d --email_ids=', $this->phpBinaryPath, $this->appPath, $commandName, $daysBeforeExpiration),
+                sprintf('%s %s/bin/console %s --days_before_expiration=%d --email_id=', $this->phpBinaryPath, $this->appPath, $commandName, $daysBeforeExpiration),
                 $id,
-                $emailsPerCommand,
                 null,
                 CommandsExecutionLogStatusEnum::Creating
             ));

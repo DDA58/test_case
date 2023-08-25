@@ -28,8 +28,6 @@ use Throwable;
 #[AsCommand(name: 'fill_commands_queue:after_expiration')]
 class FillCommandsQueueAfterExpirationCommand extends Command
 {
-    private const EMAILS_PER_COMMAND = 'emails_per_command';
-
     public function __construct(
         private readonly GetEmailsWithExpiredSubscriptionServiceInterface $getEmailsWithExpiredSubscriptionService,
         private readonly SaveCommandsQueueServiceInterface $saveCommandsQueueService,
@@ -47,23 +45,11 @@ class FillCommandsQueueAfterExpirationCommand extends Command
         parent::__construct($name);
     }
 
-    protected function configure(): void
-    {
-        $this
-            ->addOption(self::EMAILS_PER_COMMAND, null, InputOption::VALUE_REQUIRED);
-    }
-
     /**
      * @throws Throwable
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $emailsPerCommand = (int)$input->getOption(self::EMAILS_PER_COMMAND);
-
-        if ($emailsPerCommand <= 0) {
-            return Command::INVALID;
-        }
-
         $id = null;
         $status = CommandsExecutionLogStatusEnum::Failed;
 
@@ -89,9 +75,8 @@ class FillCommandsQueueAfterExpirationCommand extends Command
 
             $this->emailIdsToBulkSaveCommandsQueueServiceAdapter->handle(new IterableEmailIdsToBulkSaveCommandsQueueServiceAdapterDto(
                 $emailIds,
-                sprintf('%s %s/bin/console %s --email_ids=', $this->phpBinaryPath, $this->appPath, $commandName),
+                sprintf('%s %s/bin/console %s --email_id=', $this->phpBinaryPath, $this->appPath, $commandName),
                 $id,
-                $emailsPerCommand,
                 null,
                 CommandsExecutionLogStatusEnum::Creating
             ));

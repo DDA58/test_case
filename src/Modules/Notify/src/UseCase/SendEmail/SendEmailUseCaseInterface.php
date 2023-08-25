@@ -5,15 +5,13 @@ declare(strict_types=1);
 namespace App\Modules\Notify\UseCase\SendEmail;
 
 use App\Modules\Notify\Enum\EmailTypeEnum;
+use App\Modules\Shared\ValueObject\EmailId;
 
 interface SendEmailUseCaseInterface
 {
-    /**
-     * @param iterable<int> $emailIds
-     */
     public function handle(
         int $commandId,
-        iterable $emailIds,
+        EmailId $emailId,
         EmailTypeEnum $emailType
     ): void;
 }

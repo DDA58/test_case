@@ -1,6 +1,7 @@
 - Add logger
 - Add kibana?
-- Change from email_ids to email_id - one email per one command
 - Start several workers by command option or supervisor
 - Return ATTR_AUTOCOMMIT=0 in GetDatabaseConnection
 - Add tests
+- NotifyBeforeSubscriptionExpirationCommand case emailId to string and run worker. Status success?? When unprepared type error
+- Add value object to commandId

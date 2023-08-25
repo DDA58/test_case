@@ -26,71 +26,66 @@ readonly class SendEmailUseCase implements SendEmailUseCaseInterface
     ) {
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function handle(int $commandId, iterable $emailIds, EmailTypeEnum $emailType): void
+    public function handle(int $commandId, EmailId $emailId, EmailTypeEnum $emailType): void
     {
-        foreach ($emailIds as $emailId) {
-            $this->transaction->begin();
+        $this->transaction->begin();
 
-            try {
-                $email = $this->findNotifyEmailService->findByEmailId(new EmailId($emailId), true);
-            } catch (FindNotifyEmailServiceException) {
-                $email = null;
-            }
+        try {
+            $email = $this->findNotifyEmailService->findByEmailId($emailId, true);
+        } catch (FindNotifyEmailServiceException) {
+            $email = null;
+        }
 
-            if ($email === null) {
-                $this->transaction->rollback();
+        if ($email === null) {
+            $this->transaction->rollback();
 
-                continue;
-            }
+            return;
+        }
 
-            if (
-                $email->isEmailConfirmed() === true
-                || $email->isEmailValid() === true
-            ) {
-                $this->transaction->commit();
-
-                $this->sendEmailService->handle(
-                    $emailType,
-                    $email,
-                    $this->renderEmailService->handle($emailType, [$email->getUsername()]),
-                    $commandId
-                );
-
-                continue;
-            }
-
-            if ($email->isEmailChecked() === true && $email->isEmailValid() === false) {
-                $this->transaction->commit();
-
-                continue;
-            }
-
-            $result = $this->emailCheckerService->handle(
-                new EmailId($emailId),
-                new Email($email->getEmail()),
-            );
-
+        if (
+            $email->isEmailConfirmed() === true
+            || $email->isEmailValid() === true
+        ) {
             $this->transaction->commit();
 
-            if ($result === true) {
-                $this->sendEmailService->handle(
-                    $emailType,
-                    new EmailForNotifyDto(
-                        $email->getUserUuid(),
-                        $email->getUsername(),
-                        $email->getEmailId(),
-                        $email->getEmail(),
-                        $email->isEmailConfirmed(),
-                        true,
-                        true
-                    ),
-                    $this->renderEmailService->handle($emailType, [$email->getUsername()]),
-                    $commandId
-                );
-            }
+            $this->sendEmailService->handle(
+                $emailType,
+                $email,
+                $this->renderEmailService->handle($emailType, [$email->getUsername()]),
+                $commandId
+            );
+
+            return;
+        }
+
+        if ($email->isEmailChecked() === true && $email->isEmailValid() === false) {
+            $this->transaction->commit();
+
+            return;
+        }
+
+        $result = $this->emailCheckerService->handle(
+            $emailId,
+            new Email($email->getEmail()),
+        );
+
+        $this->transaction->commit();
+
+        if ($result === true) {
+            $this->sendEmailService->handle(
+                $emailType,
+                new EmailForNotifyDto(
+                    $email->getUserUuid(),
+                    $email->getUsername(),
+                    $email->getEmailId(),
+                    $email->getEmail(),
+                    $email->isEmailConfirmed(),
+                    true,
+                    true
+                ),
+                $this->renderEmailService->handle($emailType, [$email->getUsername()]),
+                $commandId
+            );
         }
     }
 }

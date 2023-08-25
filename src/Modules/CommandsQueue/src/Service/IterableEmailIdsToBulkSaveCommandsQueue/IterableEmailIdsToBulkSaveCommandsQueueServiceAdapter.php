@@ -25,7 +25,11 @@ readonly class IterableEmailIdsToBulkSaveCommandsQueueServiceAdapter implements
                 $this->makeIterableCommands($dto)
             );
         } catch (BulkSaveCommandsQueueServiceException $exception) {
-            throw new IterableEmailIdsToBulkSaveCommandsQueueServiceAdapterException($exception->getMessage(), $exception->getCode(), $exception);
+            throw new IterableEmailIdsToBulkSaveCommandsQueueServiceAdapterException(
+                $exception->getMessage(),
+                $exception->getCode(),
+                $exception
+            );
         }
     }
 
@@ -38,26 +42,10 @@ readonly class IterableEmailIdsToBulkSaveCommandsQueueServiceAdapter implements
         $parentCommandId = $dto->getParentCommandId();
         $commandPid = $dto->getCommandPid();
         $commandStatus = $dto->getStatus();
-        $emailIdsInCommand = [];
 
         foreach ($dto->getEmails() as $row) {
-            if (count($emailIdsInCommand) === $dto->getEmailsPerCommand()) {
-                yield new SaveCommandsQueueDto(
-                    $commandTemplate . implode(',', $emailIdsInCommand),
-                    $commandPid,
-                    $parentCommandId,
-                    $commandStatus
-                );
-
-                $emailIdsInCommand = [];
-            }
-
-            $emailIdsInCommand[] = $row->getEmailId();
-        }
-
-        if ($emailIdsInCommand !== []) {
             yield new SaveCommandsQueueDto(
-                $commandTemplate . implode(',', $emailIdsInCommand),
+                $commandTemplate . $row->getEmailId(),
                 $commandPid,
                 $parentCommandId,
                 $commandStatus

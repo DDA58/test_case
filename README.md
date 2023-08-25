@@ -20,9 +20,9 @@ You can run command immediately
 ```bash
 $ docker-compose exec app bash
 and
-$ php bin/console fill_commands_queue:before_expiration --days_before_expiration=1 --emails_per_command=10
+$ php bin/console fill_commands_queue:before_expiration --days_before_expiration=1
 or
-$ php bin/console fill_commands_queue:after_expiration --emails_per_command=10
+$ php bin/console fill_commands_queue:after_expiration
 ```
 
 These commands fill commands queue in database and run consuming worker to send emails through 50 processes

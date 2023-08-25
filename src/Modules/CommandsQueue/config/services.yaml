@@ -1,5 +1,5 @@
 parameters:
-  app.commands_queue.bulk_save.amount_rows_in_package: 1000
+  app.commands_queue.bulk_save.amount_rows_in_package: 2000
   app.commands_queue.notify_worker.default_max_threads: 50
 
 services:

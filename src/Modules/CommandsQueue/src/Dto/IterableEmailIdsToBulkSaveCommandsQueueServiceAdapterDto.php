@@ -15,7 +15,6 @@ readonly class IterableEmailIdsToBulkSaveCommandsQueueServiceAdapterDto
         private iterable $emails,
         private string $commandTemplate,
         private ?int $parentCommandId,
-        private int $emailsPerCommand,
         private ?int $commandPid,
         private CommandsExecutionLogStatusEnum $status,
     ) {
@@ -37,11 +36,6 @@ readonly class IterableEmailIdsToBulkSaveCommandsQueueServiceAdapterDto
     public function getParentCommandId(): ?int
     {
         return $this->parentCommandId;
-    }
-
-    public function getEmailsPerCommand(): int
-    {
-        return $this->emailsPerCommand;
     }
 
     public function getCommandPid(): ?int
