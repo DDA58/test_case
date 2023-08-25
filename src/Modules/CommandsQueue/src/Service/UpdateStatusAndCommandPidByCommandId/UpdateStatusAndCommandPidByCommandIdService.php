@@ -8,6 +8,7 @@ use App\Modules\CommandsQueue\Repository\CommandsQueue\CommandsQueueRepositoryIn
 use App\Modules\CommandsQueue\Repository\CommandsQueue\Exception\CommandsQueueRepositoryException;
 use App\Modules\CommandsQueue\Service\UpdateStatusAndCommandPidByCommandId\Exception\UpdateStatusAndCommandPidByCommandIdServiceException;
 use App\Modules\Shared\Enum\CommandsExecutionLogStatusEnum;
+use App\Modules\Shared\ValueObject\CommandId;
 
 readonly class UpdateStatusAndCommandPidByCommandIdService implements
     UpdateStatusAndCommandPidByCommandIdServiceInterface
@@ -18,7 +19,7 @@ readonly class UpdateStatusAndCommandPidByCommandIdService implements
     }
 
     public function handle(
-        int $commandId,
+        CommandId $commandId,
         CommandsExecutionLogStatusEnum $status,
         ?int $commandPid,
     ): bool {

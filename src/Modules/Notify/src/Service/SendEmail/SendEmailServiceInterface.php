@@ -6,6 +6,7 @@ namespace App\Modules\Notify\Service\SendEmail;
 
 use App\Modules\Notify\Dto\EmailForNotifyDto;
 use App\Modules\Notify\Enum\EmailTypeEnum;
+use App\Modules\Shared\ValueObject\CommandId;
 
 interface SendEmailServiceInterface
 {
@@ -13,6 +14,6 @@ interface SendEmailServiceInterface
         EmailTypeEnum $type,
         EmailForNotifyDto $email,
         string $text,
-        int $commandId,
+        CommandId $commandId,
     ): void;
 }

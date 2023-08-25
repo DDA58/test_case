@@ -8,6 +8,7 @@ use App\Modules\CommandsQueue\Repository\CommandsQueue\CommandsQueueRepositoryIn
 use App\Modules\CommandsQueue\Repository\CommandsQueue\Exception\CommandsQueueRepositoryException;
 use App\Modules\CommandsQueue\Service\GetByParentCommandIdAndStatus\Exception\GetByParentCommandIdAndStatusServiceException;
 use App\Modules\Shared\Enum\CommandsExecutionLogStatusEnum;
+use App\Modules\Shared\ValueObject\CommandId;
 
 readonly class GetByParentCommandIdAndStatusService implements GetByParentCommandIdAndStatusServiceInterface
 {
@@ -20,7 +21,7 @@ readonly class GetByParentCommandIdAndStatusService implements GetByParentComman
      * @inheritDoc
      */
     public function handle(
-        int $parentCommandId,
+        CommandId $parentCommandId,
         CommandsExecutionLogStatusEnum $status,
         int $limit,
         bool $forUpdate = false

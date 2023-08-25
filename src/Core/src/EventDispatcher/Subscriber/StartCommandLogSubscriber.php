@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Core\EventDispatcher\Subscriber;
 
 use App\Modules\Shared\Helper\GetMyPid\GetMyPidHelperInterface;
+use DateTimeImmutable;
+use DateTimeInterface;
 use Symfony\Component\Console\ConsoleEvents;
 use Symfony\Component\Console\Event\ConsoleCommandEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -12,7 +14,8 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 readonly class StartCommandLogSubscriber implements EventSubscriberInterface
 {
     public function __construct(
-        private GetMyPidHelperInterface $getMyPidHelper
+        private GetMyPidHelperInterface $getMyPidHelper,
+        private float $startExecutionTime,
     ) {
     }
 
@@ -26,7 +29,12 @@ readonly class StartCommandLogSubscriber implements EventSubscriberInterface
 
         /** @psalm-suppress PossiblyNullArgument */
         $event->getOutput()->writeln(
-            sprintf('Start command "%s". PID: %s', $command->getName(), $this->getMyPidHelper->get())
+            sprintf(
+                'Start command "%s". PID: %s. Start time: %s',
+                $command->getName(),
+                $this->getMyPidHelper->get(),
+                date(DateTimeInterface::ATOM, (int)$this->startExecutionTime)
+            )
         );
     }
 

@@ -3,4 +3,3 @@
 - Start several workers by command option or supervisor
 - Return ATTR_AUTOCOMMIT=0 in GetDatabaseConnection
 - Add tests
-- Add value object to commandId

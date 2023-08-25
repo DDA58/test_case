@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Modules\Notify\Event;
 
 use App\Modules\Notify\Enum\EmailTypeEnum;
+use App\Modules\Shared\ValueObject\CommandId;
+use App\Modules\Shared\ValueObject\EmailId;
 
 readonly class EmailSentSuccessfulEvent
 {
@@ -12,8 +14,8 @@ readonly class EmailSentSuccessfulEvent
 
     public function __construct(
         private EmailTypeEnum $type,
-        private int $commandId,
-        private int $emailId,
+        private CommandId $commandId,
+        private EmailId $emailId,
         private bool $emailConfirmed,
         private bool $emailChecked,
         private bool $emailValid,
@@ -25,12 +27,12 @@ readonly class EmailSentSuccessfulEvent
         return $this->type;
     }
 
-    public function getCommandId(): int
+    public function getCommandId(): CommandId
     {
         return $this->commandId;
     }
 
-    public function getEmailId(): int
+    public function getEmailId(): EmailId
     {
         return $this->emailId;
     }

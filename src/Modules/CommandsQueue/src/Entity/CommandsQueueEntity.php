@@ -5,21 +5,22 @@ declare(strict_types=1);
 namespace App\Modules\CommandsQueue\Entity;
 
 use App\Modules\Shared\Enum\CommandsExecutionLogStatusEnum;
+use App\Modules\Shared\ValueObject\CommandId;
 use DateTimeImmutable;
 
 readonly class CommandsQueueEntity
 {
     public function __construct(
-        private int $id,
+        private CommandId $id,
         private string $command,
         private ?int $commandPid,
-        private ?int $parentCommandId,
+        private ?CommandId $parentCommandId,
         private CommandsExecutionLogStatusEnum $status,
         private DateTimeImmutable $created
     ) {
     }
 
-    public function getId(): int
+    public function getId(): CommandId
     {
         return $this->id;
     }
@@ -34,7 +35,7 @@ readonly class CommandsQueueEntity
         return $this->commandPid;
     }
 
-    public function getParentCommandId(): ?int
+    public function getParentCommandId(): ?CommandId
     {
         return $this->parentCommandId;
     }

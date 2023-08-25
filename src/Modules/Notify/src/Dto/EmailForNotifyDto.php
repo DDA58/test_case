@@ -4,22 +4,26 @@ declare(strict_types=1);
 
 namespace App\Modules\Notify\Dto;
 
+use App\Modules\Shared\ValueObject\Email;
+use App\Modules\Shared\ValueObject\EmailId;
+use App\Modules\Shared\ValueObject\UserId;
+
 readonly class EmailForNotifyDto
 {
     public function __construct(
-        private string $userUuid,
+        private UserId $userId,
         private string $username,
-        private int $emailId,
-        private string $email,
+        private EmailId $emailId,
+        private Email $email,
         private bool $emailConfirmed,
         private bool $emailChecked,
         private bool $emailValid,
     ) {
     }
 
-    public function getUserUuid(): string
+    public function getUserId(): UserId
     {
-        return $this->userUuid;
+        return $this->userId;
     }
 
     public function getUsername(): string
@@ -27,12 +31,12 @@ readonly class EmailForNotifyDto
         return $this->username;
     }
 
-    public function getEmailId(): int
+    public function getEmailId(): EmailId
     {
         return $this->emailId;
     }
 
-    public function getEmail(): string
+    public function getEmail(): Email
     {
         return $this->email;
     }

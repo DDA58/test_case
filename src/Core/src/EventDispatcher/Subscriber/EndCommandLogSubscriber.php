@@ -28,7 +28,7 @@ readonly class EndCommandLogSubscriber implements EventSubscriberInterface
         /** @psalm-suppress PossiblyNullArgument */
         $event->getOutput()->writeln(
             sprintf(
-                'End command "%s". PID: %s. Time: %f',
+                'End command "%s". PID: %s. Execution time: %f',
                 $command->getName(),
                 $this->getMyPidHelper->get(),
                 microtime(true) - $this->startExecutionTime

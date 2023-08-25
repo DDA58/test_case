@@ -7,6 +7,7 @@ namespace App\Modules\CommandsQueue\Service\GetByParentCommandIdAndStatus;
 use App\Modules\CommandsQueue\Entity\CommandsQueueEntity;
 use App\Modules\CommandsQueue\Service\GetByParentCommandIdAndStatus\Exception\GetByParentCommandIdAndStatusServiceException;
 use App\Modules\Shared\Enum\CommandsExecutionLogStatusEnum;
+use App\Modules\Shared\ValueObject\CommandId;
 
 interface GetByParentCommandIdAndStatusServiceInterface
 {
@@ -15,7 +16,7 @@ interface GetByParentCommandIdAndStatusServiceInterface
      * @throws GetByParentCommandIdAndStatusServiceException
      */
     public function handle(
-        int $parentCommandId,
+        CommandId $parentCommandId,
         CommandsExecutionLogStatusEnum $status,
         int $limit,
         bool $forUpdate = false

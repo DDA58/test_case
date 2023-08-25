@@ -11,6 +11,7 @@ services:
     autowire: true
     bind:
       '$appPath': '%app.path%'
+      '$startExecutionTime': '%app.start_execution_time%'
 
   App\Core\:
     resource: '../src/*'
@@ -20,10 +21,6 @@ services:
       tags: [ 'kernel.event_subscriber' ]
     Symfony\Component\Console\Command\Command:
       tags: [ 'console.command' ]
-
-  App\Core\EventDispatcher\Subscriber\EndCommandLogSubscriber:
-    arguments:
-      $startExecutionTime: '%app.start_execution_time%'
 
   App\Core\Database\Connection\GetDatabaseConnection:
     arguments:

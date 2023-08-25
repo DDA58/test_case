@@ -8,6 +8,7 @@ use App\Modules\CommandsQueue\Dto\SaveCommandsQueueDto;
 use App\Modules\CommandsQueue\Repository\CommandsQueue\CommandsQueueRepositoryInterface;
 use App\Modules\CommandsQueue\Repository\CommandsQueue\Exception\CommandsQueueRepositoryException;
 use App\Modules\CommandsQueue\Service\SaveCommandsQueue\Exception\SaveCommandsQueueServiceException;
+use App\Modules\Shared\ValueObject\CommandId;
 
 readonly class SaveCommandsQueueService implements SaveCommandsQueueServiceInterface
 {
@@ -16,7 +17,7 @@ readonly class SaveCommandsQueueService implements SaveCommandsQueueServiceInter
     ) {
     }
 
-    public function handle(SaveCommandsQueueDto $saveCommandsQueueDto): int
+    public function handle(SaveCommandsQueueDto $saveCommandsQueueDto): CommandId
     {
         try {
             return $this->commandsQueueRepository->save($saveCommandsQueueDto);

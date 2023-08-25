@@ -8,6 +8,7 @@ use App\Modules\CommandsQueue\Repository\CommandsQueue\CommandsQueueRepositoryIn
 use App\Modules\CommandsQueue\Repository\CommandsQueue\Exception\CommandsQueueRepositoryException;
 use App\Modules\CommandsQueue\Service\UpdateStatusByParentCommandId\Exception\UpdateStatusByParentCommandIdServiceException;
 use App\Modules\Shared\Enum\CommandsExecutionLogStatusEnum;
+use App\Modules\Shared\ValueObject\CommandId;
 
 readonly class UpdateStatusByParentCommandIdService implements
     UpdateStatusByParentCommandIdServiceInterface
@@ -18,7 +19,7 @@ readonly class UpdateStatusByParentCommandIdService implements
     }
 
     public function handle(
-        int $parentCommandId,
+        CommandId $parentCommandId,
         CommandsExecutionLogStatusEnum $status
     ): bool {
         try {

@@ -41,7 +41,7 @@
     "vimeo/psalm": "^5.15"
   },
   "scripts": {
-    "psalm": "./vendor/bin/psalm",
+    "psalm": "./vendor/bin/psalm -c psalm.xml",
     "phpcs": "./vendor/bin/phpcbf"
   }
 }

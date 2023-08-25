@@ -6,6 +6,7 @@ namespace App\Modules\CommandsQueue\Service\UpdateStatusByParentCommandId;
 
 use App\Modules\CommandsQueue\Service\UpdateStatusByParentCommandId\Exception\UpdateStatusByParentCommandIdServiceException;
 use App\Modules\Shared\Enum\CommandsExecutionLogStatusEnum;
+use App\Modules\Shared\ValueObject\CommandId;
 
 interface UpdateStatusByParentCommandIdServiceInterface
 {
@@ -13,7 +14,7 @@ interface UpdateStatusByParentCommandIdServiceInterface
      * @throws UpdateStatusByParentCommandIdServiceException
      */
     public function handle(
-        int $parentCommandId,
+        CommandId $parentCommandId,
         CommandsExecutionLogStatusEnum $status
     ): bool;
 }

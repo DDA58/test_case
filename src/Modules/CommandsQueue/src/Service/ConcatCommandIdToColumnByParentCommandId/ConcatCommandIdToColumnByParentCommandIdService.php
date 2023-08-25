@@ -7,6 +7,7 @@ namespace App\Modules\CommandsQueue\Service\ConcatCommandIdToColumnByParentComma
 use App\Modules\CommandsQueue\Repository\CommandsQueue\CommandsQueueRepositoryInterface;
 use App\Modules\CommandsQueue\Repository\CommandsQueue\Exception\CommandsQueueRepositoryException;
 use App\Modules\CommandsQueue\Service\ConcatCommandIdToColumnByParentCommandId\Exception\ConcatCommandIdToColumnByParentCommandIdServiceException;
+use App\Modules\Shared\ValueObject\CommandId;
 
 readonly class ConcatCommandIdToColumnByParentCommandIdService implements
     ConcatCommandIdToColumnByParentCommandIdServiceInterface
@@ -16,7 +17,7 @@ readonly class ConcatCommandIdToColumnByParentCommandIdService implements
     ) {
     }
 
-    public function handle(int $parentCommandId): bool
+    public function handle(CommandId $parentCommandId): bool
     {
         try {
             return $this->commandsQueueRepository->concatCommandIdToColumnByParentCommandId($parentCommandId);

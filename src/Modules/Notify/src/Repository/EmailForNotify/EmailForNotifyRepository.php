@@ -7,7 +7,9 @@ namespace App\Modules\Notify\Repository\EmailForNotify;
 use App\Core\Database\Connection\GetDatabaseConnectionInterface;
 use App\Modules\Notify\Dto\EmailForNotifyDto;
 use App\Modules\Notify\Repository\EmailForNotify\Exception\EmailForNotifyRepositoryException;
+use App\Modules\Shared\ValueObject\Email;
 use App\Modules\Shared\ValueObject\EmailId;
+use App\Modules\Shared\ValueObject\UserId;
 use PDO;
 use Throwable;
 
@@ -45,10 +47,10 @@ LIMIT 1' . ($forUpdate ? ' FOR UPDATE' : '')
             }
 
             return new EmailForNotifyDto(
-                (string)$email->user_uuid,
+                new UserId((string)$email->user_uuid),
                 (string)$email->username,
-                (int)$email->email_id,
-                (string)$email->email,
+                new EmailId((int)$email->email_id),
+                new Email((string)$email->email),
                 (bool)$email->email_confirmed,
                 (bool)$email->email_checked,
                 (bool)$email->email_valid,

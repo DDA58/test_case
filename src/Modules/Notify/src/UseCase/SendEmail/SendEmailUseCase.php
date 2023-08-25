@@ -12,7 +12,7 @@ use App\Modules\Notify\Service\FindNotifyEmail\Exception\FindNotifyEmailServiceE
 use App\Modules\Notify\Service\FindNotifyEmail\FindNotifyEmailServiceInterface;
 use App\Modules\Notify\Service\RenderEmail\RenderEmailServiceInterface;
 use App\Modules\Notify\Service\SendEmail\SendEmailServiceInterface;
-use App\Modules\Shared\ValueObject\Email;
+use App\Modules\Shared\ValueObject\CommandId;
 use App\Modules\Shared\ValueObject\EmailId;
 
 readonly class SendEmailUseCase implements SendEmailUseCaseInterface
@@ -26,8 +26,11 @@ readonly class SendEmailUseCase implements SendEmailUseCaseInterface
     ) {
     }
 
-    public function handle(int $commandId, EmailId $emailId, EmailTypeEnum $emailType): void
-    {
+    public function handle(
+        CommandId $commandId,
+        EmailId $emailId,
+        EmailTypeEnum $emailType
+    ): void {
         $this->transaction->begin();
 
         try {
@@ -66,7 +69,7 @@ readonly class SendEmailUseCase implements SendEmailUseCaseInterface
 
         $result = $this->emailCheckerService->handle(
             $emailId,
-            new Email($email->getEmail()),
+            $email->getEmail(),
         );
 
         $this->transaction->commit();
@@ -75,7 +78,7 @@ readonly class SendEmailUseCase implements SendEmailUseCaseInterface
             $this->sendEmailService->handle(
                 $emailType,
                 new EmailForNotifyDto(
-                    $email->getUserUuid(),
+                    $email->getUserId(),
                     $email->getUsername(),
                     $email->getEmailId(),
                     $email->getEmail(),

@@ -25,8 +25,8 @@ readonly class EmailsSendLogRepository implements EmailsSendLogRepositoryInterfa
 
             return $statement->execute([
                 $dto->getType()->value,
-                $dto->getCommandId(),
-                $dto->getEmailId(),
+                $dto->getCommandId()->getValue(),
+                $dto->getEmailId()->getValue(),
                 (int)$dto->isEmailConfirmed(),
                 (int)$dto->isEmailChecked(),
                 (int)$dto->isEmailValid(),

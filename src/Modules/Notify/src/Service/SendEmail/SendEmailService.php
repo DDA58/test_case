@@ -7,6 +7,7 @@ namespace App\Modules\Notify\Service\SendEmail;
 use App\Modules\Notify\Dto\EmailForNotifyDto;
 use App\Modules\Notify\Enum\EmailTypeEnum;
 use App\Modules\Notify\Event\EmailSentSuccessfulEvent;
+use App\Modules\Shared\ValueObject\CommandId;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 readonly class SendEmailService implements SendEmailServiceInterface
@@ -21,9 +22,9 @@ readonly class SendEmailService implements SendEmailServiceInterface
         EmailTypeEnum $type,
         EmailForNotifyDto $email,
         string $text,
-        int $commandId,
+        CommandId $commandId,
     ): void {
-        send_email($this->emailSenderFrom, $email->getEmail(), $text);
+        send_email($this->emailSenderFrom, $email->getEmail()->getValue(), $text);
 
         $this->dispatcher->dispatch(
             new EmailSentSuccessfulEvent(

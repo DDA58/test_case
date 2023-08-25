@@ -9,6 +9,7 @@ use App\Modules\CommandsQueue\Repository\CommandsQueue\CommandsQueueRepositoryIn
 use App\Modules\CommandsQueue\Repository\CommandsQueue\Exception\CommandsQueueRepositoryException;
 use App\Modules\CommandsQueue\Service\FindByParentCommandIdAndStatus\Exception\FindByParentCommandIdAndStatusServiceException;
 use App\Modules\Shared\Enum\CommandsExecutionLogStatusEnum;
+use App\Modules\Shared\ValueObject\CommandId;
 
 readonly class FindByParentCommandIdAndStatusService implements FindByParentCommandIdAndStatusServiceInterface
 {
@@ -18,7 +19,7 @@ readonly class FindByParentCommandIdAndStatusService implements FindByParentComm
     }
 
     public function handle(
-        int $parentCommandId,
+        CommandId $parentCommandId,
         CommandsExecutionLogStatusEnum $status,
         bool $forUpdate = false
     ): ?CommandsQueueEntity {

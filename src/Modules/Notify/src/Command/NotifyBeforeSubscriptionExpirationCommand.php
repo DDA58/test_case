@@ -7,6 +7,7 @@ namespace App\Modules\Notify\Command;
 use App\Modules\Notify\Service\BeforeSubscriptionExpirationEmailTypeDetector\BeforeSubscriptionExpirationEmailTypeDetectorServiceInterface;
 use App\Modules\Notify\UseCase\SendEmail\SendEmailUseCaseInterface;
 use App\Modules\Shared\Exception\InvalidArgumentException;
+use App\Modules\Shared\ValueObject\CommandId;
 use App\Modules\Shared\ValueObject\EmailId;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -39,18 +40,20 @@ class NotifyBeforeSubscriptionExpirationCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $commandId = (int)$input->getOption(self::COMMAND_ID_OPTION);
         $daysBeforeExpiration = (int)$input->getOption(self::DAYS_BEFORE_EXPIRATION);
 
         try {
             $emailId = new EmailId(
                 (int)$input->getOption(self::EMAIL_ID_OPTION)
             );
+            $commandId = new CommandId(
+                (int)$input->getOption(self::COMMAND_ID_OPTION)
+            );
         } catch (InvalidArgumentException) {
             return Command::INVALID;
         }
 
-        if ($commandId === 0 || $daysBeforeExpiration <= 0) {
+        if ($daysBeforeExpiration <= 0) {
             return Command::INVALID;
         }
 

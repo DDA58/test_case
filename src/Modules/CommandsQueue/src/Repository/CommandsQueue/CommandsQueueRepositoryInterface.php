@@ -8,13 +8,14 @@ use App\Modules\CommandsQueue\Dto\SaveCommandsQueueDto;
 use App\Modules\CommandsQueue\Entity\CommandsQueueEntity;
 use App\Modules\CommandsQueue\Repository\CommandsQueue\Exception\CommandsQueueRepositoryException;
 use App\Modules\Shared\Enum\CommandsExecutionLogStatusEnum;
+use App\Modules\Shared\ValueObject\CommandId;
 
 interface CommandsQueueRepositoryInterface
 {
     /**
      * @throws CommandsQueueRepositoryException
      */
-    public function save(SaveCommandsQueueDto $saveCommandsQueueDto): int;
+    public function save(SaveCommandsQueueDto $saveCommandsQueueDto): CommandId;
 
     /**
      * @param iterable<SaveCommandsQueueDto> $commands
@@ -25,13 +26,13 @@ interface CommandsQueueRepositoryInterface
     /**
      * @throws CommandsQueueRepositoryException
      */
-    public function concatCommandIdToColumnByParentCommandId(int $parentCommandId): bool;
+    public function concatCommandIdToColumnByParentCommandId(CommandId $parentCommandId): bool;
 
     /**
      * @throws CommandsQueueRepositoryException
      */
     public function updateStatusByParentCommandId(
-        int $parentCommandId,
+        CommandId $parentCommandId,
         CommandsExecutionLogStatusEnum $status
     ): bool;
 
@@ -39,7 +40,7 @@ interface CommandsQueueRepositoryInterface
      * @throws CommandsQueueRepositoryException
      */
     public function updateStatusByCommandId(
-        int $commandId,
+        CommandId $commandId,
         CommandsExecutionLogStatusEnum $status
     ): bool;
 
@@ -48,7 +49,7 @@ interface CommandsQueueRepositoryInterface
      *     @throws CommandsQueueRepositoryException
      */
     public function getByParentCommandIdAndStatus(
-        int $parentCommandId,
+        CommandId $parentCommandId,
         CommandsExecutionLogStatusEnum $status,
         int $limit,
         bool $forUpdate = false
@@ -58,7 +59,7 @@ interface CommandsQueueRepositoryInterface
      * @throws CommandsQueueRepositoryException
      */
     public function updateStatusAndCommandPidByCommandId(
-        int $commandId,
+        CommandId $commandId,
         CommandsExecutionLogStatusEnum $status,
         ?int $commandPid,
     ): bool;
@@ -67,7 +68,7 @@ interface CommandsQueueRepositoryInterface
      * @throws CommandsQueueRepositoryException
      */
     public function findByParentCommandIdAndStatus(
-        int $parentCommandId,
+        CommandId $parentCommandId,
         CommandsExecutionLogStatusEnum $status,
         bool $forUpdate = false
     ): ?CommandsQueueEntity;

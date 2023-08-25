@@ -6,23 +6,23 @@ namespace App\Modules\Shared\ValueObject;
 
 use App\Modules\Shared\Exception\InvalidArgumentException;
 
-readonly class Email
+readonly class CommandId
 {
-    private const MESSAGE = '[Email] Invalid';
+    private const MESSAGE = '[CommandId] Invalid';
 
     /**
      * @throws InvalidArgumentException
      */
     public function __construct(
-        private string $email
+        private int $commandId
     ) {
-        if (str_contains($this->email, '@') === false) {
+        if ($this->commandId <= 0) {
             throw new InvalidArgumentException(self::MESSAGE);
         }
     }
 
-    public function getValue(): string
+    public function getValue(): int
     {
-        return $this->email;
+        return $this->commandId;
     }
 }

@@ -6,8 +6,8 @@ namespace App\Modules\CommandsQueue\Service\StartCommandQueueWorker;
 
 use App\Modules\CommandsQueue\Command\SimpleByProcessesNotifyWorkerCommand;
 use App\Modules\CommandsQueue\Exception\EmptyCommandNameException;
-use App\Modules\Notify\Command\NotifyAfterSubscriptionExpiredCommand;
 use App\Modules\Shared\Helper\Exec\ExecHelperInterface;
+use App\Modules\Shared\ValueObject\CommandId;
 
 readonly class StartCommandQueueWorkerService implements StartCommandQueueWorkerServiceInterface
 {
@@ -18,7 +18,7 @@ readonly class StartCommandQueueWorkerService implements StartCommandQueueWorker
     ) {
     }
 
-    public function handle(int $parentCommandId): void
+    public function handle(CommandId $parentCommandId): void
     {
         $commandName = SimpleByProcessesNotifyWorkerCommand::getDefaultName();
 
@@ -33,7 +33,7 @@ readonly class StartCommandQueueWorkerService implements StartCommandQueueWorker
                 $this->phpBinaryPath,
                 $this->appPath,
                 $commandName,
-                $parentCommandId
+                $parentCommandId->getValue()
             )
         );
     }

@@ -9,18 +9,21 @@ use App\Modules\CommandsQueue\Dto\SaveCommandsQueueDto;
 use App\Modules\CommandsQueue\Entity\CommandsQueueEntity;
 use App\Modules\CommandsQueue\Repository\CommandsQueue\Exception\CommandsQueueRepositoryException;
 use App\Modules\Shared\Enum\CommandsExecutionLogStatusEnum;
+use App\Modules\Shared\ValueObject\CommandId;
 use DateTimeImmutable;
 use PDO;
 use Throwable;
 
 readonly class CommandsQueueRepository implements CommandsQueueRepositoryInterface
 {
+    private const MESSAGE = '[CommandsQueueRepository] Failed get last insert id';
+
     public function __construct(
         private GetDatabaseConnectionInterface $getDatabaseConnection
     ) {
     }
 
-    public function save(SaveCommandsQueueDto $saveCommandsQueueDto): int
+    public function save(SaveCommandsQueueDto $saveCommandsQueueDto): CommandId
     {
         try {
             $connection = $this->getDatabaseConnection->handle();
@@ -35,8 +38,13 @@ readonly class CommandsQueueRepository implements CommandsQueueRepositoryInterfa
                 $saveCommandsQueueDto->getStatus()->value
             ]);
 
-            //TODO check before casts on types
-            return (int)$connection->lastInsertId();
+            $lastInsertId = $connection->lastInsertId();
+
+            if ($lastInsertId === false) {
+                throw new CommandsQueueRepositoryException(self::MESSAGE);
+            }
+
+            return new CommandId((int)$lastInsertId);
         } catch (Throwable $throwable) {
             throw new CommandsQueueRepositoryException($throwable->getMessage(), (int)$throwable->getCode(), $throwable);
         }
@@ -57,7 +65,7 @@ readonly class CommandsQueueRepository implements CommandsQueueRepositoryInterfa
                 $placeholders .= '(?, ?, ?, ?),';
                 $params[] = $saveCommandsQueueDto->getCommand();
                 $params[] = $saveCommandsQueueDto->getCommandPid();
-                $params[] = $saveCommandsQueueDto->getParentCommandId();
+                $params[] = $saveCommandsQueueDto->getParentCommandId()?->getValue();
                 $params[] = $saveCommandsQueueDto->getStatus()->value;
             }
 
@@ -77,7 +85,7 @@ readonly class CommandsQueueRepository implements CommandsQueueRepositoryInterfa
         }
     }
 
-    public function concatCommandIdToColumnByParentCommandId(int $parentCommandId): bool
+    public function concatCommandIdToColumnByParentCommandId(CommandId $parentCommandId): bool
     {
         try {
             $connection = $this->getDatabaseConnection->handle();
@@ -88,14 +96,14 @@ readonly class CommandsQueueRepository implements CommandsQueueRepositoryInterfa
             WHERE parent_command_id = ?'
             );
 
-            return $statement->execute([$parentCommandId]);
+            return $statement->execute([$parentCommandId->getValue()]);
         } catch (Throwable $throwable) {
             throw new CommandsQueueRepositoryException($throwable->getMessage(), (int)$throwable->getCode(), $throwable);
         }
     }
 
     public function updateStatusByParentCommandId(
-        int $parentCommandId,
+        CommandId $parentCommandId,
         CommandsExecutionLogStatusEnum $status
     ): bool {
         try {
@@ -107,14 +115,14 @@ readonly class CommandsQueueRepository implements CommandsQueueRepositoryInterfa
             WHERE parent_command_id = ?'
             );
 
-            return $statement->execute([$status->value, $parentCommandId]);
+            return $statement->execute([$status->value, $parentCommandId->getValue()]);
         } catch (Throwable $throwable) {
             throw new CommandsQueueRepositoryException($throwable->getMessage(), (int)$throwable->getCode(), $throwable);
         }
     }
 
     public function updateStatusByCommandId(
-        int $commandId,
+        CommandId $commandId,
         CommandsExecutionLogStatusEnum $status
     ): bool {
         try {
@@ -126,7 +134,7 @@ readonly class CommandsQueueRepository implements CommandsQueueRepositoryInterfa
             WHERE id = ?'
             );
 
-            return $statement->execute([$status->value, $commandId]);
+            return $statement->execute([$status->value, $commandId->getValue()]);
         } catch (Throwable $throwable) {
             throw new CommandsQueueRepositoryException($throwable->getMessage(), (int)$throwable->getCode(), $throwable);
         }
@@ -136,7 +144,7 @@ readonly class CommandsQueueRepository implements CommandsQueueRepositoryInterfa
      * @inheritDoc
      */
     public function getByParentCommandIdAndStatus(
-        int $parentCommandId,
+        CommandId $parentCommandId,
         CommandsExecutionLogStatusEnum $status,
         int $limit,
         bool $forUpdate = false
@@ -153,13 +161,13 @@ readonly class CommandsQueueRepository implements CommandsQueueRepositoryInterfa
                 $limit
             ));
             $statement->execute([
-                $parentCommandId,
+                $parentCommandId->getValue(),
                 $status->value
             ]);
 
             while ($row = $statement->fetch(PDO::FETCH_OBJ)) {
                 yield new CommandsQueueEntity(
-                    (int)$row->id,
+                    new CommandId((int)$row->id),
                     (string)$row->command,
                     $row->command_pid === null ? null : (int)$row->command_pid,
                     $parentCommandId,
@@ -173,7 +181,7 @@ readonly class CommandsQueueRepository implements CommandsQueueRepositoryInterfa
     }
 
     public function updateStatusAndCommandPidByCommandId(
-        int $commandId,
+        CommandId $commandId,
         CommandsExecutionLogStatusEnum $status,
         ?int $commandPid,
     ): bool {
@@ -187,14 +195,14 @@ readonly class CommandsQueueRepository implements CommandsQueueRepositoryInterfa
             WHERE id = ?'
             );
 
-            return $statement->execute([$status->value, $commandPid, $commandId]);
+            return $statement->execute([$status->value, $commandPid, $commandId->getValue()]);
         } catch (Throwable $throwable) {
             throw new CommandsQueueRepositoryException($throwable->getMessage(), (int)$throwable->getCode(), $throwable);
         }
     }
 
     public function findByParentCommandIdAndStatus(
-        int $parentCommandId,
+        CommandId $parentCommandId,
         CommandsExecutionLogStatusEnum $status,
         bool $forUpdate = false
     ): ?CommandsQueueEntity {

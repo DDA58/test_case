@@ -14,8 +14,10 @@ use App\Modules\CommandsQueue\Service\UpdateStatusAndCommandPidByCommandId\Updat
 use App\Modules\CommandsQueue\Service\UpdateStatusByCommandId\Exception\UpdateStatusByCommandIdServiceException;
 use App\Modules\CommandsQueue\Service\UpdateStatusByCommandId\UpdateStatusByCommandIdServiceInterface;
 use App\Modules\Shared\Enum\CommandsExecutionLogStatusEnum;
+use App\Modules\Shared\Exception\InvalidArgumentException;
 use App\Modules\Shared\Helper\ProcessCreator\ProcessCreatorHelperInterface;
 use App\Modules\Shared\Helper\USleep\USleepHelperInterface;
+use App\Modules\Shared\ValueObject\CommandId;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -55,15 +57,18 @@ class SimpleByProcessesNotifyWorkerCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $parentCommandId = (int)$input->getOption(self::PARENT_COMMAND_ID_OPTION);
         $maxThreads = (int)$input->getOption(self::MAX_THREADS_OPTION);
+
+        try {
+            $parentCommandId = new CommandId(
+                (int)$input->getOption(self::PARENT_COMMAND_ID_OPTION)
+            );
+        } catch (InvalidArgumentException) {
+            return Command::INVALID;
+        }
 
         if ($maxThreads <= 0) {
             $maxThreads = $this->defaultMaxThreads;
-        }
-
-        if ($parentCommandId === 0) {
-            return Command::INVALID;
         }
 
         try {
@@ -89,7 +94,7 @@ class SimpleByProcessesNotifyWorkerCommand extends Command
             $process->setTimeout(0);
             $process->disableOutput();
             $process->start();
-            $processes[$command->getId()] = $process;
+            $processes[$command->getId()->getValue()] = $process;
 
             try {
                 $this->updateStatusAndCommandPidByCommandIdService->handle(
@@ -117,7 +122,7 @@ class SimpleByProcessesNotifyWorkerCommand extends Command
 
                     try {
                         $this->updateStatusByCommandIdService->handle(
-                            $commandId,
+                            new CommandId($commandId),
                             $runningProcess->getExitCode() ? CommandsExecutionLogStatusEnum::Failed : CommandsExecutionLogStatusEnum::Success
                         );
                     } catch (UpdateStatusByCommandIdServiceException) {
@@ -144,7 +149,7 @@ class SimpleByProcessesNotifyWorkerCommand extends Command
                     $process->setTimeout(0);
                     $process->disableOutput();
                     $process->start();
-                    $processes[$command->getId()] = $process;
+                    $processes[$command->getId()->getValue()] = $process;
 
                     $this->updateStatusAndCommandPidByCommandIdService->handle(
                         $command->getId(),
